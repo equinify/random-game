@@ -487,7 +487,9 @@ async function loadSession() {
 async function fetchProfile(user) {
   try {
     currentUser = user;
-    const { data, error } = await sb.from("profiles").select("*").eq("id", user.id).single();
+    const fetchPromise = sb.from("profiles").select("*").eq("id", user.id).single();
+    const timeoutPromise = new Promise((_,rej) => setTimeout(() => rej(new Error("timeout")), 5000));
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
     if (error) { console.error("fetchProfile error:", error.message); currentProfile = null; return; }
     currentProfile = data;
   } catch(e) { console.error("fetchProfile exception:", e); currentProfile = null; }
@@ -523,10 +525,11 @@ async function doLogin() {
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) { err.textContent = error.message; return; }
+    // Close immediately — profile loads in background via onAuthStateChange
     closeOverlay("auth-overlay");
     showToast("Welcome back, Caster.");
   } catch(e) {
-    err.textContent = "Connection error — check your internet and try again.";
+    err.textContent = "Connection error — try again.";
     console.error(e);
   } finally {
     btn.disabled = false; btn.textContent = "Enter";
