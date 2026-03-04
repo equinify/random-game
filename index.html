@@ -477,23 +477,30 @@ function updateUI() {
 
 // ── Session ───────────────────────────────────────────
 async function loadSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) await fetchProfile(session.user);
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) await fetchProfile(session.user);
+  } catch(e) { console.error("loadSession error:", e); }
   updateUI();
 }
 
 async function fetchProfile(user) {
-  currentUser = user;
-  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  currentProfile = data;
+  try {
+    currentUser = user;
+    const { data, error } = await sb.from("profiles").select("*").eq("id", user.id).single();
+    if (error) { console.error("fetchProfile error:", error.message); currentProfile = null; return; }
+    currentProfile = data;
+  } catch(e) { console.error("fetchProfile exception:", e); currentProfile = null; }
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
-    await fetchProfile(session.user);
-  } else {
-    currentUser = null; currentProfile = null;
-  }
+  try {
+    if (session?.user) {
+      await fetchProfile(session.user);
+    } else {
+      currentUser = null; currentProfile = null;
+    }
+  } catch(e) { console.error("authStateChange error:", e); }
   updateUI();
   refreshStats();
 });
