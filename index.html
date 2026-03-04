@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Caster Chronicles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:           #c9a84c;
+      --gold-light:     #f0d080;
+      --gold-dim:       #7a5e20;
+      --purple:         #7b4fcf;
+      --purple-bright:  #a67ff0;
+      --purple-dim:     #4a2a8a;
+      --purple-deep:    #1a0a3a;
+      --deep:           #08040f;
+      --panel:          rgba(18,8,38,0.85);
+      --border:         rgba(123,79,207,0.35);
+      --green:          #2ecc71;
+      --red:            #e74c3c;
+
+      /* Role badge colours */
+      --creator-color:  #ffd700;
+      --admin-color:    #e74c3c;
+      --editor-color:   #a67ff0;
+      --mod-color:      #3498db;
+      --supporter-color:#00d4ff;
+      --player-color:   #6a6050;
+    }
+
+    html, body { height: 100%; background: var(--deep); color: #e8dfc8; font-family: 'Crimson Pro', serif; overflow: hidden; }
+
+    /* ── BG ── */
+    #bg {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 115%, rgba(123,79,207,0.32) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 40% at 15% 5%,   rgba(201,168,76,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 45% at 85% 8%,   rgba(100,40,180,0.22) 0%, transparent 60%),
+        linear-gradient(175deg, #08040f 0%, #0e0820 40%, #0a0618 100%);
+    }
+    #stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+    .star { position: absolute; border-radius: 50%; animation: twinkle var(--d,4s) ease-in-out infinite var(--delay,0s); }
+    @keyframes twinkle { 0%,100%{opacity:var(--lo,.1);transform:scale(1)} 50%{opacity:var(--hi,.7);transform:scale(1.4)} }
+    .mote { position:absolute; border-radius:50%; background:radial-gradient(circle,rgba(166,127,240,.6) 0%,transparent 70%); animation:float var(--fd,12s) ease-in-out infinite var(--fdelay,0s); pointer-events:none; }
+    @keyframes float { 0%,100%{transform:translateY(0) translateX(0) scale(1);opacity:var(--flo,.15)} 33%{transform:translateY(-30px) translateX(12px) scale(1.1);opacity:var(--fhi,.35)} 66%{transform:translateY(15px) translateX(-8px) scale(.9);opacity:var(--flo,.15)} }
+    #rune-ring { position:fixed; width:720px; height:720px; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2; pointer-events:none; opacity:.09; animation:spin 90s linear infinite; border:1px solid var(--purple); border-radius:50%; background:repeating-conic-gradient(rgba(123,79,207,.4) 0deg 2deg,transparent 2deg 30deg); }
+    #rune-ring-inner { position:fixed; width:530px; height:530px; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2; pointer-events:none; opacity:.06; animation:spin 55s linear infinite reverse; border:1px solid var(--purple-bright); border-radius:50%; }
+    #rune-ring-outer { position:fixed; width:900px; height:900px; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2; pointer-events:none; opacity:.04; animation:spin 150s linear infinite; border:1px solid var(--gold); border-radius:50%; }
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    /* ── LAYOUT ── */
+    #app { position:relative; z-index:10; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+    /* ── HEADER ── */
+    #header { text-align:center; margin-bottom:8px; animation:fadeDown 1.2s cubic-bezier(.16,1,.3,1) both; }
+    .logo-eyebrow { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.48em; text-transform:uppercase; color:var(--purple-dim); margin-bottom:10px; }
+    .logo-title { font-family:'Cinzel Decorative',serif; font-size:clamp(2.1rem,5vw,4rem); font-weight:900; line-height:1; background:linear-gradient(180deg,#d4aaff 0%,var(--purple-bright) 40%,var(--purple) 75%,#3a1a70 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 36px rgba(123,79,207,.55)); }
+    .logo-sub { font-family:'Cinzel',serif; font-size:.66rem; letter-spacing:.52em; color:var(--purple-dim); margin-top:10px; text-transform:uppercase; }
+
+    /* ── STATS ── */
+    #stats-bar { display:flex; align-items:center; gap:0; margin:14px auto 0; border:1px solid var(--border); border-radius:3px; background:rgba(18,8,38,.7); overflow:hidden; animation:fadeIn 1.8s ease both 0.5s; }
+    .stat-item { display:flex; flex-direction:column; align-items:center; padding:8px 22px; gap:2px; }
+    .stat-item+.stat-item { border-left:1px solid var(--border); }
+    .stat-value { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--purple-bright); line-height:1; transition:all .4s ease; }
+    .stat-value.pulse { animation:statPulse .5s ease; }
+    @keyframes statPulse { 0%{transform:scale(1);color:var(--purple-bright)} 50%{transform:scale(1.25);color:#d4aaff;filter:drop-shadow(0 0 8px rgba(166,127,240,.9))} 100%{transform:scale(1);color:var(--purple-bright)} }
+    .stat-label { font-family:'Cinzel',serif; font-size:.52rem; letter-spacing:.22em; text-transform:uppercase; color:var(--purple-dim); }
+
+    /* ── DIVIDER ── */
+    .divider { display:flex; align-items:center; gap:14px; width:340px; margin:16px auto; animation:fadeIn 1.6s ease both .4s; }
+    .divider-line { flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--purple-dim),transparent); }
+    .divider-gem { width:7px; height:7px; background:var(--purple); transform:rotate(45deg); box-shadow:0 0 10px var(--purple),0 0 20px rgba(123,79,207,.4); }
+
+    /* ── NAV ── */
+    #nav { display:flex; flex-direction:column; gap:8px; width:315px; animation:fadeUp 1.4s cubic-bezier(.16,1,.3,1) both .3s; }
+    .nav-btn { position:relative; display:flex; align-items:center; gap:16px; padding:13px 20px; background:var(--panel); border:1px solid var(--border); border-radius:3px; cursor:pointer; text-decoration:none; color:inherit; transition:border-color .25s,background .25s,transform .2s; overflow:hidden; outline:none; }
+    .nav-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(123,79,207,.10) 0%,transparent 60%); opacity:0; transition:opacity .25s; }
+    .nav-btn:hover::before { opacity:1; }
+    .nav-btn:hover { border-color:rgba(123,79,207,.65); background:rgba(20,10,42,.95); transform:translateX(4px); }
+    .nav-btn:hover .btn-icon { color:var(--purple-bright); }
+    .nav-btn:hover .btn-label { color:#d4aaff; }
+    .nav-btn:active { transform:translateX(2px) scale(.99); }
+    .nav-btn::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(166,127,240,.05),transparent); transition:left .5s; }
+    .nav-btn:hover::after { left:150%; }
+    .btn-icon { font-size:1.2rem; color:var(--purple-dim); transition:color .25s; width:24px; text-align:center; flex-shrink:0; }
+    .btn-text { display:flex; flex-direction:column; }
+    .btn-label { font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:#c8bedd; transition:color .25s; }
+    .btn-desc { font-size:.70rem; color:#4a3e60; margin-top:2px; }
+    .btn-arrow { margin-left:auto; color:var(--purple-dim); font-size:.8rem; opacity:0; transition:opacity .2s,transform .2s; }
+    .nav-btn:hover .btn-arrow { opacity:1; transform:translateX(4px); }
+    .nav-btn.primary { border-color:rgba(123,79,207,.55); background:linear-gradient(135deg,rgba(30,12,58,.95) 0%,rgba(12,8,28,.95) 100%); }
+    .nav-btn.primary .btn-label { color:var(--purple-bright); }
+
+    /* ── VERSION / FOOTER ── */
+    #version { position:fixed; top:18px; right:22px; font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.2em; color:var(--purple-dim); z-index:20; border:1px solid var(--border); padding:4px 10px; border-radius:2px; background:rgba(8,4,15,.7); }
+    #footer { position:fixed; bottom:18px; width:100%; text-align:center; font-size:.63rem; letter-spacing:.25em; color:#1e1628; text-transform:uppercase; z-index:10; animation:fadeIn 2s ease both 1s; }
+
+    /* ── AUTH BAR / USER BAR ── */
+    #auth-bar { position:fixed; top:18px; left:22px; z-index:20; display:flex; align-items:center; gap:10px; animation:fadeIn 1.5s ease both .8s; }
+    .auth-btn { font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--purple-dim); background:rgba(8,4,15,.7); border:1px solid var(--border); padding:5px 14px; border-radius:2px; cursor:pointer; transition:color .2s,border-color .2s; }
+    .auth-btn:hover { color:var(--purple-bright); border-color:var(--purple-dim); }
+    .auth-sep { color:var(--border); font-size:.7rem; }
+
+    /* user pill when logged in */
+    #user-pill { display:none; align-items:center; gap:8px; background:rgba(8,4,15,.7); border:1px solid var(--border); border-radius:2px; padding:5px 14px; }
+    #user-pill.visible { display:flex; }
+    .user-name { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.14em; color:#c8bedd; }
+    .role-badge { font-size:.6rem; font-family:'Cinzel',serif; letter-spacing:.1em; padding:2px 7px; border-radius:2px; font-weight:700; text-transform:uppercase; }
+    .role-creator  { background:rgba(255,215,0,.15);  color:var(--creator-color);  border:1px solid rgba(255,215,0,.3); }
+    .role-admin    { background:rgba(231,76,60,.12);  color:var(--admin-color);   border:1px solid rgba(231,76,60,.3); }
+    .role-card_editor { background:rgba(166,127,240,.12); color:var(--editor-color);  border:1px solid rgba(166,127,240,.3); }
+    .role-moderator{ background:rgba(52,152,219,.12); color:var(--mod-color);     border:1px solid rgba(52,152,219,.3); }
+    .role-supporter{ background:rgba(0,212,255,.10);  color:var(--supporter-color);border:1px solid rgba(0,212,255,.3); }
+    .role-player   { background:rgba(106,96,80,.10);  color:var(--player-color);  border:1px solid rgba(106,96,80,.3); }
+    .sign-out-btn { background:none; border:none; cursor:pointer; color:var(--purple-dim); font-size:.75rem; transition:color .2s; padding:0 2px; }
+    .sign-out-btn:hover { color:#e74c3c; }
+
+    /* ── MODAL BASE ── */
+    .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.78); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal-box { background:linear-gradient(160deg,#100820 0%,#080610 100%); border:1px solid var(--border); border-radius:4px; padding:36px 40px; width:380px; position:relative; transform:translateY(20px) scale(.97); transition:transform .3s cubic-bezier(.16,1,.3,1); max-height:90vh; overflow-y:auto; }
+    .modal-overlay.open .modal-box { transform:translateY(0) scale(1); }
+    .modal-title { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--purple-bright); margin-bottom:6px; }
+    .modal-sub { font-size:.76rem; color:#3a2a50; margin-bottom:22px; letter-spacing:.05em; }
+    .modal-close { position:absolute; top:16px; right:18px; background:none; border:none; cursor:pointer; color:var(--purple-dim); font-size:1.1rem; transition:color .2s; }
+    .modal-close:hover { color:var(--purple-bright); }
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-family:'Cinzel',serif; font-size:.63rem; letter-spacing:.2em; text-transform:uppercase; color:var(--purple-dim); margin-bottom:6px; }
+    .field input, .field select, .field textarea { width:100%; background:rgba(255,255,255,.03); border:1px solid rgba(123,79,207,.2); border-radius:2px; padding:10px 14px; color:#c8bedd; font-family:'Crimson Pro',serif; font-size:.95rem; outline:none; transition:border-color .2s; }
+    .field select option { background:#100820; }
+    .field textarea { resize:vertical; min-height:80px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--purple-dim); }
+    .modal-btn { width:100%; margin-top:8px; padding:12px; background:linear-gradient(135deg,rgba(123,79,207,.18),rgba(123,79,207,.08)); border:1px solid var(--purple-dim); border-radius:2px; color:var(--purple-bright); font-family:'Cinzel',serif; font-size:.7rem; letter-spacing:.25em; text-transform:uppercase; cursor:pointer; transition:background .2s,border-color .2s; }
+    .modal-btn:hover { background:linear-gradient(135deg,rgba(123,79,207,.32),rgba(123,79,207,.16)); border-color:var(--purple-bright); }
+    .modal-btn:disabled { opacity:.4; cursor:not-allowed; }
+    .modal-btn.danger { border-color:rgba(231,76,60,.4); color:#e74c3c; background:rgba(231,76,60,.08); }
+    .modal-btn.danger:hover { background:rgba(231,76,60,.18); border-color:#e74c3c; }
+    .modal-switch { text-align:center; margin-top:16px; font-size:.74rem; color:#3a2a50; }
+    .modal-switch a { color:var(--purple-dim); cursor:pointer; }
+    .modal-switch a:hover { color:var(--purple-bright); }
+    .modal-err { margin-top:10px; font-size:.75rem; color:#e74c3c; text-align:center; min-height:18px; }
+    .modal-ok  { margin-top:10px; font-size:.75rem; color:var(--green); text-align:center; min-height:18px; }
+    .divider-sm { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:18px 0; }
+
+    /* ── CARD DB LIST ── */
+    .card-row { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(123,79,207,.12); }
+    .card-row:last-child { border-bottom:none; }
+    .card-row-name { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.08em; color:#c8bedd; }
+    .card-row-meta { font-size:.65rem; color:#4a3e60; margin-top:2px; }
+    .card-row-actions { display:flex; gap:6px; }
+    .icon-btn { background:none; border:none; cursor:pointer; color:#4a2a8a; font-size:.8rem; transition:color .2s; padding:2px 5px; border-radius:2px; }
+    .icon-btn:hover { color:var(--purple-bright); }
+    .icon-btn.del:hover { color:#e74c3c; }
+
+    /* ── ADMIN PANEL ── */
+    .user-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid rgba(123,79,207,.1); }
+    .user-row:last-child { border-bottom:none; }
+    .user-row-name { font-family:'Cinzel',serif; font-size:.68rem; color:#c8bedd; flex:1; }
+    .user-row select { background:rgba(255,255,255,.03); border:1px solid rgba(123,79,207,.2); border-radius:2px; padding:4px 8px; color:#c8bedd; font-family:'Cinzel',serif; font-size:.6rem; outline:none; }
+    .user-row button { font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.1em; padding:5px 12px; background:rgba(123,79,207,.15); border:1px solid var(--purple-dim); border-radius:2px; color:var(--purple-bright); cursor:pointer; transition:background .2s; }
+    .user-row button:hover { background:rgba(123,79,207,.3); }
+
+    /* ── ANNOUNCEMENT BANNER ── */
+    #announcement-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:linear-gradient(90deg,#1a0840,#0e0620,#1a0840); border-bottom:1px solid rgba(255,215,0,.3); padding:10px 60px 10px 20px; animation:fadeIn .4s ease; }
+    #announcement-banner.visible { display:block; }
+    .ann-title { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.18em; color:var(--creator-color); text-transform:uppercase; }
+    .ann-body { font-size:.82rem; color:#c8bedd; margin-top:3px; }
+    #ann-close { position:absolute; top:10px; right:16px; background:none; border:none; cursor:pointer; color:var(--gold-dim); font-size:1rem; }
+
+    /* ── TOAST ── */
+    #toast { position:fixed; bottom:50px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(10,6,22,.96); border:1px solid var(--border); border-radius:3px; padding:10px 24px; font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.15em; color:var(--purple-bright); z-index:200; opacity:0; transition:opacity .3s,transform .3s; pointer-events:none; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-30px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(30px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+
+    /* scrollbar in modals */
+    .modal-box::-webkit-scrollbar { width:4px; }
+    .modal-box::-webkit-scrollbar-track { background:transparent; }
+    .modal-box::-webkit-scrollbar-thumb { background:var(--purple-dim); border-radius:2px; }
+
+    @media (max-width:480px) {
+      #nav { width:90vw; } .divider { width:90vw; }
+      .modal-box { width:90vw; padding:26px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="stars"></div>
+<div id="rune-ring-outer"></div>
+<div id="rune-ring"></div>
+<div id="rune-ring-inner"></div>
+
+<!-- Announcement banner -->
+<div id="announcement-banner">
+  <button id="ann-close" onclick="closeAnnouncement()">✕</button>
+  <div class="ann-title" id="ann-title"></div>
+  <div class="ann-body"  id="ann-body"></div>
+</div>
+
+<!-- Auth / user bar -->
+<div id="auth-bar">
+  <div id="guest-btns">
+    <button class="auth-btn" onclick="openAuth('login')">Sign In</button>
+    <span class="auth-sep">·</span>
+    <button class="auth-btn" onclick="openAuth('register')">Register</button>
+  </div>
+  <div id="user-pill">
+    <span class="user-name" id="pill-name"></span>
+    <span class="role-badge" id="pill-badge"></span>
+    <button class="sign-out-btn" onclick="signOut()" title="Sign out">⏻</button>
+  </div>
+</div>
+
+<div id="version">Alpha v0.1</div>
+
+<!-- Main app -->
+<div id="app">
+  <div id="header">
+    <div class="logo-eyebrow">Welcome to</div>
+    <div class="logo-title">Caster Chronicles</div>
+    <div class="logo-sub">Online Card Game</div>
+    <div id="stats-bar">
+      <div class="stat-item"><span class="stat-value" id="stat-cards">—</span><span class="stat-label">Cards</span></div>
+      <div class="stat-item"><span class="stat-value" id="stat-duelists">—</span><span class="stat-label">Duelists</span></div>
+      <div class="stat-item"><span class="stat-value" id="stat-battles">—</span><span class="stat-label">Battles</span></div>
+    </div>
+  </div>
+
+  <div class="divider"><div class="divider-line"></div><div class="divider-gem"></div><div class="divider-line"></div></div>
+
+  <nav id="nav">
+    <button class="nav-btn primary" onclick="showToast('Battle Rooms coming soon!')">
+      <span class="btn-icon">⚔️</span>
+      <span class="btn-text"><span class="btn-label">Duel</span><span class="btn-desc">Enter a battle room &amp; challenge opponents</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" onclick="showToast('Deck Builder coming soon!')">
+      <span class="btn-icon">📋</span>
+      <span class="btn-text"><span class="btn-label">Deck Builder</span><span class="btn-desc">Construct and manage your decks</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" onclick="openCardDB()">
+      <span class="btn-icon">📖</span>
+      <span class="btn-text"><span class="btn-label">Card Database</span><span class="btn-desc" id="db-desc">Browse all Caster Chronicles cards</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" onclick="showToast('Profile coming soon!')">
+      <span class="btn-icon">👤</span>
+      <span class="btn-text"><span class="btn-label">My Profile</span><span class="btn-desc">Stats, history &amp; achievements</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" id="admin-btn" style="display:none" onclick="openAdminPanel()">
+      <span class="btn-icon">🛡️</span>
+      <span class="btn-text"><span class="btn-label">Admin Panel</span><span class="btn-desc">Manage users &amp; roles</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" id="announce-btn" style="display:none" onclick="openAnnounceModal()">
+      <span class="btn-icon">📣</span>
+      <span class="btn-text"><span class="btn-label">Announcements</span><span class="btn-desc">Post a message to all players</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+    <button class="nav-btn" onclick="showToast('Settings coming soon!')">
+      <span class="btn-icon">⚙️</span>
+      <span class="btn-text"><span class="btn-label">Settings</span><span class="btn-desc">Audio, display &amp; preferences</span></span>
+      <span class="btn-arrow">›</span>
+    </button>
+  </nav>
+</div>
+
+<div id="footer">© Caster Chronicles — All rights reserved</div>
+<div id="toast"></div>
+
+<!-- ══ AUTH MODAL ══ -->
+<div class="modal-overlay" id="auth-overlay" onclick="closeIfBg(event,'auth-overlay')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('auth-overlay')">✕</button>
+
+    <!-- Login -->
+    <div id="view-login">
+      <div class="modal-title">Sign In</div>
+      <div class="modal-sub">Enter the chronicles</div>
+      <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="your@email.com"/></div>
+      <div class="field"><label>Password</label><input id="login-pass" type="password" placeholder="••••••••"/></div>
+      <button class="modal-btn" id="login-btn" onclick="doLogin()">Enter</button>
+      <div class="modal-err" id="login-err"></div>
+      <div class="modal-switch">No account? <a onclick="switchAuth('register')">Register here</a></div>
+    </div>
+
+    <!-- Register -->
+    <div id="view-register" style="display:none">
+      <div class="modal-title">Register</div>
+      <div class="modal-sub">Begin your journey</div>
+      <div class="field"><label>Username</label><input id="reg-username" type="text" placeholder="CasterName"/></div>
+      <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="your@email.com"/></div>
+      <div class="field"><label>Password</label><input id="reg-pass" type="password" placeholder="Min 6 characters"/></div>
+      <button class="modal-btn" id="reg-btn" onclick="doRegister()">Create Account</button>
+      <div class="modal-err" id="reg-err"></div>
+      <div class="modal-ok"  id="reg-ok"></div>
+      <div class="modal-switch">Already registered? <a onclick="switchAuth('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CARD DATABASE MODAL ══ -->
+<div class="modal-overlay" id="carddb-overlay" onclick="closeIfBg(event,'carddb-overlay')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('carddb-overlay')">✕</button>
+    <div class="modal-title">Card Database</div>
+    <div class="modal-sub" id="carddb-sub">Loading…</div>
+
+    <div id="card-list" style="max-height:220px;overflow-y:auto;margin-bottom:16px;"></div>
+
+    <!-- Add card — shown only to privileged roles -->
+    <div id="add-card-section" style="display:none">
+      <div class="divider-sm"></div>
+      <div class="field"><label>Card Name</label><input id="new-card-name" type="text" placeholder="Card name…"/></div>
+      <div class="field"><label>Description</label><textarea id="new-card-desc" placeholder="Card description (optional)"></textarea></div>
+      <div class="field"><label>Type</label>
+        <select id="new-card-type">
+          <option value="creature">Creature</option>
+          <option value="spell">Spell</option>
+          <option value="trap">Trap</option>
+          <option value="artifact">Artifact</option>
+        </select>
+      </div>
+      <div class="field"><label>Rarity</label>
+        <select id="new-card-rarity">
+          <option value="common">Common</option>
+          <option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option>
+          <option value="legendary">Legendary</option>
+        </select>
+      </div>
+      <button class="modal-btn" onclick="addCard()">+ Add Card</button>
+      <div class="modal-err" id="card-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL MODAL ══ -->
+<div class="modal-overlay" id="admin-overlay" onclick="closeIfBg(event,'admin-overlay')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('admin-overlay')">✕</button>
+    <div class="modal-title">Admin Panel</div>
+    <div class="modal-sub">Manage player roles</div>
+    <div id="user-list" style="max-height:350px;overflow-y:auto;"></div>
+    <div class="modal-err" id="admin-err"></div>
+  </div>
+</div>
+
+<!-- ══ ANNOUNCE MODAL ══ -->
+<div class="modal-overlay" id="announce-overlay" onclick="closeIfBg(event,'announce-overlay')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('announce-overlay')">✕</button>
+    <div class="modal-title">Post Announcement</div>
+    <div class="modal-sub">Visible to all players on load</div>
+    <div class="field"><label>Title</label><input id="ann-title-input" type="text" placeholder="Announcement title…"/></div>
+    <div class="field"><label>Message</label><textarea id="ann-body-input" placeholder="Your message…"></textarea></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+      <input type="checkbox" id="ann-pinned" style="width:auto;accent-color:var(--purple);"/>
+      <label for="ann-pinned" style="font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--purple-dim);cursor:pointer;">Pin this announcement</label>
+    </div>
+    <button class="modal-btn" onclick="postAnnouncement()">📣 Post</button>
+    <div class="modal-err" id="ann-err"></div>
+    <div class="modal-ok"  id="ann-ok"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  ⚙️  CONFIGURATION — paste your Supabase keys here
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_dhuEDL-DJP4_mD4PUVIevg_1u_gjA-j';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── Role helpers ──────────────────────────────────────
+const ROLE_LABELS = {
+  creator:     '👑 Creator',
+  admin:       '🛡 Admin',
+  card_editor: '✏️ Editor',
+  moderator:   '🔰 Mod',
+  supporter:   '💎 Supporter',
+  player:      'Player',
+};
+const CAN_ADD_CARDS    = ['creator','admin','card_editor'];
+const CAN_DELETE_CARDS = ['creator','admin','moderator'];
+const CAN_MANAGE_USERS = ['creator','admin'];
+const CAN_ANNOUNCE     = ['creator'];
+
+let currentUser    = null;
+let currentProfile = null;
+
+function myRole() { return currentProfile?.role || null; }
+function can(list) { return list.includes(myRole()); }
+
+// ── Stars / motes ─────────────────────────────────────
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 130; i++) {
+  const s = document.createElement('div'); s.className = 'star';
+  const size = Math.random()*2.2+0.4, isPurple = Math.random()<.35;
+  s.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${isPurple?'rgba(166,127,240,.9)':'white'};--d:${3+Math.random()*6}s;--delay:-${Math.random()*8}s;--lo:${.05+Math.random()*.12};--hi:${.35+Math.random()*.55};`;
+  starsEl.appendChild(s);
+}
+for (let i = 0; i < 8; i++) {
+  const m = document.createElement('div'); m.className = 'mote';
+  const sz = 60+Math.random()*120;
+  m.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--fd:${10+Math.random()*16}s;--fdelay:-${Math.random()*12}s;--flo:${.06+Math.random()*.10};--fhi:${.18+Math.random()*.20};`;
+  starsEl.appendChild(m);
+}
+
+// ── Toast ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── Modal helpers ─────────────────────────────────────
+function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+function closeIfBg(e, id) { if (e.target === document.getElementById(id)) closeOverlay(id); }
+
+// ── Stats ─────────────────────────────────────────────
+function animateStat(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+  setTimeout(() => el.classList.remove('pulse'), 500);
+}
+async function refreshStats() {
+  const { data, error } = await sb.from('public_stats').select('*').single();
+  if (error || !data) return;
+  document.getElementById('stat-cards').textContent    = data.card_count;
+  document.getElementById('stat-duelists').textContent = data.duelist_count;
+  document.getElementById('stat-battles').textContent  = data.battle_count;
+  document.getElementById('db-desc').textContent =
+    `${data.card_count} card${data.card_count!=1?'s':''} in the database`;
+}
+
+// ── UI: show/hide elements by role ────────────────────
+function updateUI() {
+  const pill    = document.getElementById('user-pill');
+  const guests  = document.getElementById('guest-btns');
+  const adminB  = document.getElementById('admin-btn');
+  const annB    = document.getElementById('announce-btn');
+
+  if (currentProfile) {
+    guests.style.display = 'none';
+    pill.classList.add('visible');
+    const role = currentProfile.role;
+    document.getElementById('pill-name').textContent  = currentProfile.username;
+    const badge = document.getElementById('pill-badge');
+    badge.textContent  = ROLE_LABELS[role] || role;
+    badge.className    = `role-badge role-${role}`;
+    adminB.style.display  = can(CAN_MANAGE_USERS) ? '' : 'none';
+    annB.style.display    = can(CAN_ANNOUNCE)     ? '' : 'none';
+  } else {
+    guests.style.display = '';
+    pill.classList.remove('visible');
+    adminB.style.display = 'none';
+    annB.style.display   = 'none';
+  }
+}
+
+// ── Session ───────────────────────────────────────────
+async function loadSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) await fetchProfile(session.user);
+  updateUI();
+}
+
+async function fetchProfile(user) {
+  currentUser = user;
+  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = data;
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    await fetchProfile(session.user);
+  } else {
+    currentUser = null; currentProfile = null;
+  }
+  updateUI();
+  refreshStats();
+});
+
+// ── AUTH ──────────────────────────────────────────────
+function openAuth(view) { switchAuth(view); openOverlay('auth-overlay'); }
+function switchAuth(view) {
+  document.getElementById('view-login').style.display    = view==='login'    ? '' : 'none';
+  document.getElementById('view-register').style.display = view==='register' ? '' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Entering…';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Enter';
+  if (error) { err.textContent = error.message; return; }
+  closeOverlay('auth-overlay');
+  showToast('Welcome back, Caster.');
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const pass     = document.getElementById('reg-pass').value;
+  const btn      = document.getElementById('reg-btn');
+  const err      = document.getElementById('reg-err');
+  const ok       = document.getElementById('reg-ok');
+  err.textContent = ''; ok.textContent = '';
+  if (!username) { err.textContent = 'Username is required.'; return; }
+  if (username.length < 3) { err.textContent = 'Username must be at least 3 characters.'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const { error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { username } }
+  });
+  btn.disabled = false; btn.textContent = 'Create Account';
+  if (error) { err.textContent = error.message; return; }
+  ok.textContent = 'Account created! Check your email to confirm, then sign in.';
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  showToast('You have left the chronicles.');
+}
+
+// ── CARD DATABASE ─────────────────────────────────────
+async function openCardDB() {
+  openOverlay('carddb-overlay');
+  document.getElementById('add-card-section').style.display = can(CAN_ADD_CARDS) ? '' : 'none';
+  document.getElementById('card-err').textContent = '';
+  await renderCards();
+}
+
+async function renderCards() {
+  const sub = document.getElementById('carddb-sub');
+  const list = document.getElementById('card-list');
+  list.innerHTML = `<div style="text-align:center;color:#3a2a50;padding:16px;font-size:.8rem;">Loading…</div>`;
+  const { data: cards, error } = await sb.from('cards').select('*').order('created_at', { ascending: false });
+  if (error) { sub.textContent = 'Error loading cards.'; return; }
+  sub.textContent = `${cards.length} card${cards.length!==1?'s':''} in the database`;
+  if (cards.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:#3a2a50;padding:16px;font-size:.8rem;">No cards yet — be the first to add one!</div>`;
+    return;
+  }
+  list.innerHTML = cards.map(c => `
+    <div class="card-row">
+      <div>
+        <div class="card-row-name">${escHtml(c.name)}</div>
+        <div class="card-row-meta">${c.card_type} · ${c.rarity}${c.description ? ' · ' + escHtml(c.description.slice(0,40)) + (c.description.length>40?'…':'') : ''}</div>
+      </div>
+      <div class="card-row-actions">
+        ${can(CAN_DELETE_CARDS) ? `<button class="icon-btn del" onclick="deleteCard(${c.id})" title="Remove">✕</button>` : ''}
+      </div>
+    </div>`).join('');
+  animateStat('stat-cards');
+}
+
+async function addCard() {
+  const name  = document.getElementById('new-card-name').value.trim();
+  const desc  = document.getElementById('new-card-desc').value.trim();
+  const type  = document.getElementById('new-card-type').value;
+  const rarity= document.getElementById('new-card-rarity').value;
+  const err   = document.getElementById('card-err');
+  err.textContent = '';
+  if (!name) { err.textContent = 'Card name is required.'; return; }
+  const { error } = await sb.from('cards').insert({
+    name, description: desc || null, card_type: type, rarity,
+    added_by: currentUser?.id
+  });
+  if (error) { err.textContent = error.message; return; }
+  document.getElementById('new-card-name').value = '';
+  document.getElementById('new-card-desc').value = '';
+  showToast(`"${name}" added to the database!`);
+  await renderCards();
+  await refreshStats();
+}
+
+async function deleteCard(id) {
+  const { error } = await sb.from('cards').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Card removed.');
+  await renderCards();
+  await refreshStats();
+}
+
+// ── ADMIN PANEL ───────────────────────────────────────
+async function openAdminPanel() {
+  openOverlay('admin-overlay');
+  const list = document.getElementById('user-list');
+  list.innerHTML = `<div style="text-align:center;color:#3a2a50;padding:16px;font-size:.8rem;">Loading…</div>`;
+  const { data: users, error } = await sb.from('profiles').select('*').order('created_at');
+  if (error) { list.innerHTML = `<div style="color:#e74c3c;font-size:.8rem;padding:10px;">${error.message}</div>`; return; }
+
+  const selectableRoles = ['admin','card_editor','moderator','supporter','player'];
+
+  list.innerHTML = users.map(u => {
+    const isCreator = u.role === 'creator';
+    const isMe = u.id === currentUser?.id;
+    const rolesHtml = isCreator
+      ? `<span class="role-badge role-creator">👑 Creator</span>`
+      : `<select id="role-sel-${u.id}">${selectableRoles.map(r=>`<option value="${r}"${r===u.role?' selected':''}>${ROLE_LABELS[r]||r}</option>`).join('')}</select>
+         <button onclick="applyRole('${u.id}')">Apply</button>`;
+    return `<div class="user-row">
+      <div class="user-row-name">${escHtml(u.username)}${isMe?' <span style="color:#4a2a8a;font-size:.6rem;">(you)</span>':''}</div>
+      ${rolesHtml}
+    </div>`;
+  }).join('');
+}
+
+async function applyRole(userId) {
+  const sel = document.getElementById(`role-sel-${userId}`);
+  const newRole = sel.value;
+  const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
+  if (error) { document.getElementById('admin-err').textContent = error.message; return; }
+  showToast('Role updated.');
+  await openAdminPanel();
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────
+function openAnnounceModal() { openOverlay('announce-overlay'); }
+
+async function postAnnouncement() {
+  const title  = document.getElementById('ann-title-input').value.trim();
+  const body   = document.getElementById('ann-body-input').value.trim();
+  const pinned = document.getElementById('ann-pinned').checked;
+  const err    = document.getElementById('ann-err');
+  const ok     = document.getElementById('ann-ok');
+  err.textContent = ''; ok.textContent = '';
+  if (!title || !body) { err.textContent = 'Title and message are required.'; return; }
+  const { error } = await sb.from('announcements').insert({
+    title, body, pinned, posted_by: currentUser?.id
+  });
+  if (error) { err.textContent = error.message; return; }
+  ok.textContent = 'Announcement posted!';
+  document.getElementById('ann-title-input').value = '';
+  document.getElementById('ann-body-input').value  = '';
+  document.getElementById('ann-pinned').checked    = false;
+  showToast('📣 Announcement posted!');
+  loadLatestAnnouncement();
+}
+
+async function loadLatestAnnouncement() {
+  const { data } = await sb.from('announcements')
+    .select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) return;
+  const banner = document.getElementById('announcement-banner');
+  document.getElementById('ann-title').textContent = data.title;
+  document.getElementById('ann-body').textContent  = data.body;
+  banner.classList.add('visible');
+}
+
+function closeAnnouncement() {
+  document.getElementById('announcement-banner').classList.remove('visible');
+}
+
+// ── Utility ───────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['auth-overlay','carddb-overlay','admin-overlay','announce-overlay'].forEach(closeOverlay);
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────
+document.getElementById('new-card-name')?.addEventListener('keydown', e => { if (e.key==='Enter') addCard(); });
+
+loadSession();
+refreshStats();
+loadLatestAnnouncement();
+</script>
+</body>
+</html>
