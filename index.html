@@ -218,7 +218,7 @@
     </button>
     <button class="nav-btn" onclick="openCardDB()">
       <span class="btn-icon">📖</span>
-      <span class="btn-text"><span class="btn-label">Card Database</span><span class="btn-desc" id="db-desc">Browse all Caster Chronicles cards</span></span>
+      <span class="btn-text"><span class="btn-label">Card Database</span><span class="btn-desc" id="db-desc">View the available cards</span></span>
       <span class="btn-arrow">›</span>
     </button>
     <button class="nav-btn" onclick="showToast('Profile coming soon!')">
@@ -381,7 +381,7 @@ async function refreshStats() {
     document.getElementById('stat-cards').textContent    = data.card_count;
     document.getElementById('stat-duelists').textContent = data.duelist_count;
     document.getElementById('stat-battles').textContent  = data.battle_count;
-    document.getElementById('db-desc').textContent =
+    document.getElementById('db-desc').textContent = 'View the available cards';
       `${data.card_count} card${data.card_count!=1?'s':''} in the database`;
   } catch(e) { console.error('refreshStats:', e); }
 }
