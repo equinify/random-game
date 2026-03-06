@@ -400,7 +400,7 @@ function renderGrid(cards){
   grid.innerHTML=cards.map((c,i)=>`
     <div class="card-tile" onclick="openDetail(${i})" style="animation-delay:${i*0.03}s">
       <div class="card-image ${c['image url']?'':'no-img'}">
-        ${c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" onerror="this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`:'No Image'}
+        ${c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" onerror="console.error('Image failed:', '${escHtml(c['image url'])}'); this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`:'No Image'}
       </div>
       <div class="card-body">
         <div class="card-name">${escHtml(c.name)}</div>
