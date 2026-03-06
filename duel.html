@@ -516,6 +516,13 @@ async function init() {
   me = session.user;
   const { data:p } = await sb.from('profiles').select('*').eq('id',me.id).single();
   myProfile = p;
+  // Set topbar immediately
+  const _tn = document.getElementById('topbar-username');
+  if (_tn) _tn.textContent = myProfile?.username || me.email;
+  const _so = document.getElementById('topbar-signout-btn');
+  if (_so) _so.style.display = '';
+  const _tb = document.getElementById('topbar-badge');
+  if (_tb && myProfile?.role) { _tb.textContent = ROLE_LABELS[myProfile.role]||myProfile.role; _tb.className=`role-badge role-${myProfile.role}`; _tb.style.display=''; }
   await Promise.all([loadDecks(), loadCards()]);
 }
 
