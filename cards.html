@@ -454,7 +454,7 @@
     <div class="field"><label>Artist</label><input id="c-artist" type="text" placeholder="Artist name"/></div>
     <div class="field"><label>Description</label><textarea id="c-desc" placeholder="Card description…"></textarea></div>
     <div class="field"><label>Special Ability <span style="font-size:.7rem;color:var(--grey)">(shown to players)</span></label><textarea id="c-ability" placeholder="Special ability text…"></textarea></div>
-    <div class="field"><label>Image URL</label><input id="c-img" type="text" placeholder="https://…"/></div>
+    <div class="field"><label>Image URL</label><input id="c-img" type="text" placeholder="https://caster-chronicles.infinitecards.ca/path/to/image.webp"/></div>
     <div class="field" style="gap:6px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
         <input type="checkbox" id="c-has-break" onchange="toggleBreakType()" style="cursor:pointer;"/> Has Break Effect
@@ -603,28 +603,26 @@ function showToast(msg){
 
 async function loadCards(){
   try {
-    console.log('[loadCards] Starting fetch...');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    console.log('[loadCards] Loading cards from JSON...');
     
-    const{data,error}=await sb.from('cards').select('*');
-    clearTimeout(timeoutId);
+    // Update this URL to your GitHub raw content URL
+    // Format: https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/cards.json
+    const cardsUrl = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/cards.json';
     
-    console.log('[loadCards] Response received');
-    console.log('[loadCards] Error:', error);
-    console.log('[loadCards] Data:', data);
+    const response = await fetch(cardsUrl);
     
-    if(error){
-      console.error('[loadCards] Supabase error:', error);
-      document.getElementById('empty-state').textContent='Error: '+error.message;
-      return;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Could not load cards.json`);
     }
-    console.log('[loadCards] Found', data?.length || 0, 'cards');
-    allCards=data||[];
+    
+    const data = await response.json();
+    console.log('[loadCards] Loaded', data.length, 'cards from JSON');
+    
+    allCards = data || [];
     applyFilters();
   } catch(e) {
-    console.error('[loadCards] Exception:', e);
-    document.getElementById('empty-state').textContent='Exception: '+e.message;
+    console.error('[loadCards] Error:', e.message);
+    document.getElementById('empty-state').textContent='Error loading cards: '+e.message;
   }
 }
 
@@ -805,48 +803,17 @@ function updateJsonPreview(){const el=document.getElementById('effect-json-previ
 
 async function addCard(){
   const name=document.getElementById('c-name').value.trim();
-  const element=document.getElementById('c-element').value;
-  const type=document.getElementById('c-type').value;
-  const rarity=document.getElementById('c-rarity').value;
-  const atk=document.getElementById('c-atk').value;
-  const def=document.getElementById('c-def').value;
-  const aether=document.getElementById('c-aether').value;
-  const race=document.getElementById('c-race').value.trim();
-  const artist=document.getElementById('c-artist').value.trim();
-  const desc=document.getElementById('c-desc').value.trim();
-  const ability=document.getElementById('c-ability').value.trim();
-  const img=document.getElementById('c-img').value.trim();
+  
   const err=document.getElementById('form-err');
   const ok=document.getElementById('form-ok');
-  const btn=document.getElementById('add-btn');
   err.textContent='';ok.textContent='';
-  if(!name){err.textContent='Card name is required.';return;}
-  btn.disabled=true;btn.textContent='Adding…';
-  const hasBreak=document.getElementById('c-has-break').checked;
-  const breakType=document.getElementById('c-break-type').value;
-  const effectData=buildEffectData();
-  const{data,error}=await sb.from('cards').insert({
-    name,element,card_type:type,rarity,
-    atk:atk!==''?parseInt(atk):null,
-    def:def!==''?parseInt(def):null,
-    aether_cost:aether!==''?parseInt(aether):0,
-    race_trait:race||null,artist:artist||null,
-    description:desc||null,special_ability:ability||null,
-    image_url:img||null,added_by:currentUser?.id,
-    card_set:document.getElementById('c-set').value||'modern',
-    has_break:hasBreak,break_type:hasBreak?breakType:null,
-    effect_data:effectData,
-  }).select().single();
-  btn.disabled=false;btn.textContent='+ Add Card';
-  if(error){err.textContent=error.message;return;}
-  ok.textContent=`✓ "${name}" added!`;
-  allCards.unshift(data);applyFilters();
-  effectBlocks=[];blockIdCounter=0;renderEffectBlocks();
-  document.getElementById('c-has-break').checked=false;
-  document.getElementById('c-break-type').style.display='none';
-  ['c-name','c-atk','c-def','c-aether','c-race','c-artist','c-desc','c-ability','c-img'].forEach(id=>{document.getElementById(id).value='';});
-  document.getElementById('c-name').focus();
-  setTimeout(()=>{ok.textContent='';},4000);
+  
+  if(!name){
+    err.textContent='Card name is required.';
+    return;
+  }
+  
+  err.textContent='To add cards, edit cards.json in your GitHub repo and commit the changes. Refresh this page to load the new cards.';
 }
 
 let authMode='signin';
