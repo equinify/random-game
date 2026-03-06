@@ -633,14 +633,23 @@ async function init() {
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; updateAuthUI(); return; }
   if (session?.user) {
-    // Show email immediately while profile loads
     currentUser = session.user;
+    // Show immediately regardless of profile
     document.getElementById('topbar-username').textContent = session.user.email;
     document.getElementById('topbar-signout-btn').style.display = '';
-    if (!currentProfile || currentProfile.id !== session.user.id) {
-      const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-      currentProfile = data;
-      updateAuthUI();
+    document.getElementById('toggle-add-btn').style.display = '';
+    // Then load full profile
+    const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    currentProfile = data;
+    if (currentProfile) {
+      document.getElementById('topbar-username').textContent = currentProfile.username || session.user.email;
+      const badge = document.getElementById('topbar-badge');
+      if (badge && currentProfile.role) {
+        badge.textContent = ROLE_LABELS[currentProfile.role] || currentProfile.role;
+        badge.className = `role-badge role-${currentProfile.role}`;
+        badge.style.display = '';
+      }
+      document.getElementById('toggle-add-btn').style.display = can(CAN_ADD) ? '' : 'none';
     }
   }
 });
