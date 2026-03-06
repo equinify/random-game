@@ -981,7 +981,7 @@ function renderActionFields(b, a, aIdx) {
 
 function renderEffectBlocks() {
   const el = document.getElementById('effect-blocks');
-  if (effectBlocks.length === 0) { el.innerHTML = '<div style="font-size:.6rem;color:var(--grey);font-family:'Cinzel',serif;letter-spacing:.1em;">No effects — click + Effect to add one</div>'; return; }
+  if (effectBlocks.length === 0) { el.innerHTML = '<div style="font-size:.6rem;color:var(--grey);font-family:\'Cinzel\',serif;letter-spacing:.1em;">No effects — click + Effect to add one</div>'; return; }
   el.innerHTML = effectBlocks.map(b => `
     <div style="background:#0d0d0d;border:1px solid var(--border2);border-radius:3px;padding:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
