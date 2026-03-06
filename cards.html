@@ -511,7 +511,7 @@
 <script>
 const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_dhuEDL-DJP4_mD4PUVIevg_1u_gjA-j';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, storageKey: 'caster-chronicles-auth', storage: window.localStorage } });
 
 const ROLE_LABELS = {
   creator:'👑 Creator', admin:'🛡 Admin', card_editor:'✏️ Editor',
