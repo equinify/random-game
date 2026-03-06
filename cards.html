@@ -349,8 +349,7 @@
     <div id="topbar-auth" style="display:flex;align-items:center;gap:8px;">
       <span id="topbar-username" style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;color:var(--white);"></span>
       <span class="role-badge" id="topbar-badge" style="display:none"></span>
-      <button id="topbar-signin-btn" onclick="openAuthModal()" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#aaa;cursor:pointer;display:none;">Sign In</button>
-      <button id="topbar-signout-btn" onclick="signOut()" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#666;cursor:pointer;display:none;">Sign Out</button>
+      <button id="topbar-signout-btn" onclick="signOut()" style="display:none;font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#666;cursor:pointer;">Sign Out</button>
       <button id="toggle-add-btn" onclick="toggleAddForm()" style="display:none;font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(245,197,24,.3);background:rgba(245,197,24,.06);color:#f5c518;cursor:pointer;">✏️ Add Card</button>
     </div>
   </div>
@@ -633,7 +632,6 @@ function updateAuthUI() {
   const uname    = document.getElementById('topbar-username');
   const badge    = document.getElementById('topbar-badge');
   const addSection = document.getElementById('add-card-section');
-  const signinBtn  = document.getElementById('topbar-signin-btn');
   const signoutBtn = document.getElementById('topbar-signout-btn');
   const toggleBtn  = document.getElementById('toggle-add-btn');
 
@@ -643,15 +641,13 @@ function updateAuthUI() {
     badge.textContent = ROLE_LABELS[role] || role;
     badge.className = `role-badge role-${role}`;
     badge.style.display = '';
-    signinBtn.style.display  = 'none';
-    signoutBtn.style.display = '';
+    if(signoutBtn) signoutBtn.style.display = '';
     addSection.style.display = 'none';
     if (toggleBtn) toggleBtn.style.display = can(CAN_ADD) ? '' : 'none';
   } else {
     uname.textContent = '';
     badge.style.display  = 'none';
-    signinBtn.style.display  = '';
-    signoutBtn.style.display = 'none';
+    if(signoutBtn) signoutBtn.style.display = 'none';
     addSection.style.display = 'none';
     if (toggleBtn) toggleBtn.style.display = 'none';
   }
