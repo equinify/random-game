@@ -602,9 +602,30 @@ function showToast(msg){
 }
 
 async function loadCards(){
-  const{data,error}=await sb.from('cards').select('*');
-  if(error){document.getElementById('empty-state').textContent='Error loading cards.';return;}
-  allCards=data||[];applyFilters();
+  try {
+    console.log('[loadCards] Starting fetch...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const{data,error}=await sb.from('cards').select('*');
+    clearTimeout(timeoutId);
+    
+    console.log('[loadCards] Response received');
+    console.log('[loadCards] Error:', error);
+    console.log('[loadCards] Data:', data);
+    
+    if(error){
+      console.error('[loadCards] Supabase error:', error);
+      document.getElementById('empty-state').textContent='Error: '+error.message;
+      return;
+    }
+    console.log('[loadCards] Found', data?.length || 0, 'cards');
+    allCards=data||[];
+    applyFilters();
+  } catch(e) {
+    console.error('[loadCards] Exception:', e);
+    document.getElementById('empty-state').textContent='Exception: '+e.message;
+  }
 }
 
 function applyFilters(){
@@ -617,18 +638,26 @@ function applyFilters(){
   const sortBy =document.getElementById('sort-by').value;
   const sortDir=document.getElementById('sort-dir').value;
 
+  // Map sort field names to actual column names
+  const sortFieldMap = {
+    'aether_cost': 'aether cost',
+    'card_type': 'card type',
+    'image_url': 'image url'
+  };
+  const actualSortBy = sortFieldMap[sortBy] || sortBy;
+
   let filtered=allCards.filter(c=>{
     if(search&&!c.name.toLowerCase().includes(search)&&!(c.description||'').toLowerCase().includes(search))return false;
     if(element&&c.element!==element)return false;
-    if(type&&c.card_type!==type)return false;
+    if(type&&c['card type']!==type)return false;
     if(rarity&&c.rarity!==rarity)return false;
-    if(set&&c.card_set!==set)return false;
-    if(aether&&c.aether_cost>parseInt(aether))return false;
+    if(set&&c['card set']!==set)return false;
+    if(aether&&c['aether cost']>parseInt(aether))return false;
     return true;
   });
 
   filtered.sort((a,b)=>{
-    let va=a[sortBy],vb=b[sortBy];
+    let va=a[actualSortBy],vb=b[actualSortBy];
     if(sortBy==='rarity'){va=RARITY_ORDER.indexOf(va);vb=RARITY_ORDER.indexOf(vb);}
     if(va===null||va===undefined)va=sortDir==='asc'?Infinity:-Infinity;
     if(vb===null||vb===undefined)vb=sortDir==='asc'?Infinity:-Infinity;
@@ -659,17 +688,17 @@ function renderGrid(cards){
   if(cards.length===0){grid.innerHTML=`<div id="empty-state">No cards match your filters.</div>`;return;}
   grid.innerHTML=cards.map((c,i)=>`
     <div class="card-tile" onclick="openDetail(${c.id})" style="animation-delay:${i*0.03}s">
-      <div class="card-image ${c.image_url?'':'no-img'}">
-        ${c.image_url?`<img src="${escHtml(c.image_url)}" alt="${escHtml(c.name)}" onerror="this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`:'No Image'}
+      <div class="card-image ${c['image url']?'':'no-img'}">
+        ${c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" onerror="this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`:'No Image'}
       </div>
       <div class="card-body">
         <div class="card-name">${escHtml(c.name)}</div>
         <div class="card-meta">
-          <span class="card-type-badge">${escHtml(c.card_type)}</span>
-          ${c.card_set?`<span class="card-type-badge" style="border-color:${c.card_set==='legacy'?'rgba(245,197,24,.3)':'rgba(79,195,247,.3)'};color:${c.card_set==='legacy'?'#f5c518':'#4fc3f7'}">${c.card_set==='legacy'?'Legacy':'Modern'}</span>`:''}
+          <span class="card-type-badge">${escHtml(c['card type'])}</span>
+          ${c['card set']?`<span class="card-type-badge" style="border-color:${c['card set']==='legacy'?'rgba(245,197,24,.3)':'rgba(79,195,247,.3)'};color:${c['card set']==='legacy'?'#f5c518':'#4fc3f7'}">${c['card set']==='legacy'?'Legacy':'Modern'}</span>`:''}
           <span class="card-element el-${c.element}">${c.element}</span>
         </div>
-        ${(c.atk!==null||c.def!==null)?`<div class="card-stats">${c.atk!==null?`ATK <span>${c.atk}</span>`:''} ${c.def!==null?`DEF <span>${c.def}</span>`:''} ${c.aether_cost!==undefined?`✦ <span>${c.aether_cost}</span>`:''}</div>`:''}
+        ${(c.atk!==null||c.def!==null)?`<div class="card-stats">${c.atk!==null?`ATK <span>${c.atk}</span>`:''} ${c.def!==null?`DEF <span>${c.def}</span>`:''} ${c['aether cost']!==undefined?`✦ <span>${c['aether cost']}</span>`:''}</div>`:''}
         <div class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</div>
       </div>
     </div>`).join('');
@@ -679,19 +708,19 @@ function openDetail(id){
   const c=allCards.find(x=>x.id===id);if(!c)return;
   currentCard=c;
   const imgEl=document.getElementById('detail-img');
-  imgEl.innerHTML=c.image_url?`<img src="${escHtml(c.image_url)}" alt="${escHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='No Image'"/>`:'No Image';
+  imgEl.innerHTML=c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='No Image'"/>`:'No Image';
   document.getElementById('d-name').textContent=c.name;
   document.getElementById('d-badges').innerHTML=`
     <span class="card-element el-${c.element}">${c.element}</span>
-    <span class="card-type-badge">${escHtml(c.card_type)}</span>
+    <span class="card-type-badge">${escHtml(c['card type'])}</span>
     <span class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</span>
-    ${c.aether_cost!==null?`<span class="card-type-badge">✦ ${c.aether_cost} Aether</span>`:''}`;
+    ${c['aether cost']!==null?`<span class="card-type-badge">✦ ${c['aether cost']} Aether</span>`:''}`;
   const descS=document.getElementById('d-desc-section');
   document.getElementById('d-desc').textContent=c.description||'';
   descS.style.display=c.description?'':'none';
   const abilS=document.getElementById('d-ability-section');
-  document.getElementById('d-ability').textContent=c.special_ability||'';
-  abilS.style.display=c.special_ability?'':'none';
+  document.getElementById('d-ability').textContent=c['special ability']||'';
+  abilS.style.display=c['special ability']?'':'none';
   document.getElementById('d-grid').innerHTML=[
     ['ATK',c.atk!==null?c.atk:'—'],['DEF',c.def!==null?c.def:'—'],
     ['Race / Trait',c.race_trait||'—'],['Artist',c.artist||'—'],
