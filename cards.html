@@ -446,8 +446,33 @@
         <div class="field"><label>Race / Trait</label><input id="c-race" type="text" placeholder="e.g. Dragon, Mage"/></div>
         <div class="field"><label>Artist</label><input id="c-artist" type="text" placeholder="Artist name"/></div>
         <div class="field"><label>Description</label><textarea id="c-desc" placeholder="Card description…"></textarea></div>
-        <div class="field"><label>Special Ability</label><textarea id="c-ability" placeholder="Special ability text…"></textarea></div>
+        <div class="field"><label>Special Ability <span style="font-size:.7rem;color:var(--grey)">(shown to players)</span></label><textarea id="c-ability" placeholder="Special ability text…"></textarea></div>
         <div class="field"><label>Image URL</label><input id="c-img" type="text" placeholder="https://…"/></div>
+
+        <!-- BREAK EFFECT -->
+        <div class="field" style="gap:6px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="c-has-break" onchange="toggleBreakType()" style="cursor:pointer;"/>
+            Has Break Effect
+          </label>
+          <select id="c-break-type" style="display:none;" class="filter-select">
+            <option value="servant">Servant — place on field free</option>
+            <option value="conjure">Conjure — activate free</option>
+            <option value="barrier">Barrier — activate free</option>
+          </select>
+        </div>
+
+        <!-- EFFECT ENGINE BUILDER -->
+        <div class="field">
+          <label style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Effect Engine <span style="font-size:.7rem;color:var(--grey)">(JSON under the hood)</span></span>
+            <button onclick="addEffectBlock()" style="font-size:.6rem;padding:3px 8px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:2px;color:var(--white);cursor:pointer;font-family:'Cinzel',serif;">+ Effect</button>
+          </label>
+          <div id="effect-blocks" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div>
+          <div id="effect-json-preview" style="margin-top:6px;font-size:.56rem;color:var(--grey);font-family:monospace;background:#0a0a0a;padding:6px;border-radius:2px;border:1px solid var(--border2);white-space:pre-wrap;display:none;"></div>
+          <button onclick="toggleJsonPreview()" style="margin-top:4px;font-size:.54rem;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:2px;color:var(--grey);cursor:pointer;font-family:'Cinzel',serif;">Preview JSON</button>
+        </div>
+
         <button class="submit-btn" id="add-btn" onclick="addCard()">+ Add Card</button>
         <div class="form-err" id="form-err"></div>
         <div class="form-ok"  id="form-ok"></div>
@@ -728,6 +753,199 @@ async function deleteCurrentCard() {
 }
 
 // Add card
+
+// ── EFFECT BUILDER ───────────────────────────────────────────
+const TRIGGERS = {
+  on_play:           'When Played',
+  on_attack:         'When This Attacks',
+  on_destroy:        'When This Is Destroyed',
+  on_break:          'When This Breaks an Orb',
+  turn_start:        'Start of Your Turn',
+  turn_end:          'End of Your Turn',
+  on_orb_broken:     'When Your Orb Is Broken',
+  on_opponent_play:  'When Opponent Plays a Card',
+  on_damage:         'When This Takes Damage',
+  continuous:        'Continuous (Always Active)',
+};
+
+const ACTIONS = {
+  draw:            'Draw Cards',
+  destroy:         'Destroy Servant',
+  boost:           'Boost ATK/DEF',
+  negate:          'Negate Effect/Attack',
+  search:          'Search Deck',
+  return:          'Return to Hand',
+  banish:          'Banish',
+  extra_attack:    'Grant Extra Attack',
+  protect:         'Protect from Destruction',
+  gain_aether:     'Gain Aether',
+  copy_effect:     'Copy Effect',
+  buff_element:    'Buff All of Element',
+  direct_orb:      'Direct Orb Damage',
+  change_position: 'Change Servant Position',
+  special:         'Custom / Manual Effect',
+};
+
+const TARGETS = {
+  self:                    'This Card',
+  selected_opponent_servant: 'Selected Opponent Servant',
+  all_opponent_servants:   'All Opponent Servants',
+  selected_friendly:       'Selected Friendly Servant',
+  all_friendly:            'All Friendly Servants',
+  current_effect:          'Current Effect',
+  current_attack:          'Current Attack',
+  selected_field_servant:  'Any Field Servant',
+};
+
+let effectBlocks = [];
+let blockIdCounter = 0;
+
+function toggleBreakType() {
+  const has = document.getElementById('c-has-break').checked;
+  document.getElementById('c-break-type').style.display = has ? '' : 'none';
+}
+
+function addEffectBlock() {
+  const id = blockIdCounter++;
+  effectBlocks.push({ id, trigger: 'on_play', condition: null, actions: [] });
+  renderEffectBlocks();
+}
+
+function removeEffectBlock(id) {
+  effectBlocks = effectBlocks.filter(b => b.id !== id);
+  renderEffectBlocks();
+}
+
+function addAction(blockId) {
+  const b = effectBlocks.find(b => b.id === blockId);
+  if (!b) return;
+  b.actions.push({ type: 'draw', amount: 1 });
+  renderEffectBlocks();
+}
+
+function removeAction(blockId, aIdx) {
+  const b = effectBlocks.find(b => b.id === blockId);
+  if (!b) return;
+  b.actions.splice(aIdx, 1);
+  renderEffectBlocks();
+}
+
+function updateTrigger(blockId, val) {
+  const b = effectBlocks.find(b => b.id === blockId);
+  if (b) { b.trigger = val; }
+}
+
+function updateActionType(blockId, aIdx, val) {
+  const b = effectBlocks.find(b => b.id === blockId);
+  if (!b) return;
+  b.actions[aIdx] = getDefaultAction(val);
+  renderEffectBlocks();
+}
+
+function updateActionField(blockId, aIdx, field, val) {
+  const b = effectBlocks.find(b => b.id === blockId);
+  if (!b) return;
+  const numFields = ['amount','atk','def','value'];
+  b.actions[aIdx][field] = numFields.includes(field) ? (val===''?0:parseInt(val)) : val;
+}
+
+function getDefaultAction(type) {
+  const defaults = {
+    draw:            { type:'draw', amount:1 },
+    destroy:         { type:'destroy', target:'selected_opponent_servant' },
+    boost:           { type:'boost', target:'self', atk:300, def:0 },
+    negate:          { type:'negate', target:'current_attack' },
+    search:          { type:'search', filter:{ card_type:'servant' } },
+    return:          { type:'return', target:'selected_opponent_servant' },
+    banish:          { type:'banish', target:'selected_opponent_servant' },
+    extra_attack:    { type:'extra_attack', amount:1 },
+    protect:         { type:'protect', duration:'until_end_of_turn' },
+    gain_aether:     { type:'gain_aether', amount:2 },
+    copy_effect:     { type:'copy_effect', target:'selected_field_servant' },
+    buff_element:    { type:'buff_element', element:'ignus', atk:200, def:0 },
+    direct_orb:      { type:'direct_orb', amount:1 },
+    change_position: { type:'change_position', target:'selected_opponent_servant', position:'defense' },
+    special:         { type:'special', id:'', description:'' },
+  };
+  return defaults[type] || { type };
+}
+
+function renderActionFields(b, a, aIdx) {
+  const sel = (field, options, val) => `<select onchange="updateActionField(${b.id},${aIdx},'${field}',this.value)" style="margin-top:3px;width:100%;background:#111;border:1px solid var(--border2);color:var(--white);padding:3px 5px;border-radius:2px;font-size:.6rem;">
+    ${options.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}
+  </select>`;
+  const inp = (field, val, type='text', placeholder='') => `<input type="${type}" value="${val??''}" placeholder="${placeholder}" 
+    onchange="updateActionField(${b.id},${aIdx},'${field}',this.value)"
+    style="margin-top:3px;width:100%;background:#111;border:1px solid var(--border2);color:var(--white);padding:3px 5px;border-radius:2px;font-size:.6rem;"/>`;
+
+  switch(a.type) {
+    case 'draw':         return `Amount: ${inp('amount',a.amount,'number')}`;
+    case 'gain_aether':  return `Amount: ${inp('amount',a.amount,'number')}`;
+    case 'extra_attack': return `Amount: ${inp('amount',a.amount,'number')}`;
+    case 'direct_orb':   return `Amount: ${inp('amount',a.amount,'number')}`;
+    case 'destroy':      return `Target: ${sel('target',Object.entries(TARGETS),a.target)}`;
+    case 'return':       return `Target: ${sel('target',Object.entries(TARGETS),a.target)}`;
+    case 'banish':       return `Target: ${sel('target',Object.entries(TARGETS),a.target)}`;
+    case 'copy_effect':  return `Target: ${sel('target',Object.entries(TARGETS),a.target)}`;
+    case 'negate':       return `Target: ${sel('target',[['current_attack','Current Attack'],['current_effect','Current Effect']],a.target)}`;
+    case 'boost':        return `Target: ${sel('target',Object.entries(TARGETS),a.target)}<br/>ATK +${inp('atk',a.atk,'number')} DEF +${inp('def',a.def,'number')}`;
+    case 'protect':      return `Duration: ${sel('duration',[['until_end_of_turn','Until End of Turn'],['permanent','Permanent']],a.duration)}`;
+    case 'change_position': return `Target: ${sel('target',Object.entries(TARGETS),a.target)}<br/>Position: ${sel('position',[['attack','Attack'],['defense','Defense']],a.position)}`;
+    case 'buff_element': return `Element: ${sel('element',[['solis','Solis'],['ignus','Ignus'],['silva','Silva'],['terra','Terra'],['luna','Luna'],['aqua','Aqua'],['aes','Aes'],['void','Void']],a.element)}<br/>ATK +${inp('atk',a.atk,'number')} DEF +${inp('def',a.def,'number')}`;
+    case 'search':       return `Card Type: ${sel('filter',Object.entries({servant:'Servant',caster:'Caster',conjure:'Conjure',barrier:'Barrier',deity:'Deity'}),a.filter?.card_type||'servant')}`;
+    case 'special':      return `ID: ${inp('id',a.id,'text','unique_id')}<br/>Description: ${inp('description',a.description,'text','What happens…')}`;
+    default: return '';
+  }
+}
+
+function renderEffectBlocks() {
+  const el = document.getElementById('effect-blocks');
+  if (effectBlocks.length === 0) { el.innerHTML = '<div style="font-size:.6rem;color:var(--grey);font-family:'Cinzel',serif;letter-spacing:.1em;">No effects — click + Effect to add one</div>'; return; }
+  el.innerHTML = effectBlocks.map(b => `
+    <div style="background:#0d0d0d;border:1px solid var(--border2);border-radius:3px;padding:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <select onchange="updateTrigger(${b.id},this.value)" style="background:#111;border:1px solid var(--border);color:var(--white);padding:4px 8px;border-radius:2px;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;flex:1;">
+          ${Object.entries(TRIGGERS).map(([v,l])=>`<option value="${v}"${b.trigger===v?' selected':''}>${l}</option>`).join('')}
+        </select>
+        <button onclick="removeEffectBlock(${b.id})" style="margin-left:8px;background:rgba(229,57,53,.15);border:1px solid rgba(229,57,53,.3);color:var(--red);padding:3px 8px;border-radius:2px;cursor:pointer;font-size:.6rem;">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${b.actions.map((a,aIdx) => `
+          <div style="background:#111;border:1px solid var(--border2);border-radius:2px;padding:8px;position:relative;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <select onchange="updateActionType(${b.id},${aIdx},this.value)" style="flex:1;background:#0a0a0a;border:1px solid var(--border2);color:var(--white);padding:3px 6px;border-radius:2px;font-size:.6rem;">
+                ${Object.entries(ACTIONS).map(([v,l])=>`<option value="${v}"${a.type===v?' selected':''}>${l}</option>`).join('')}
+              </select>
+              <button onclick="removeAction(${b.id},${aIdx})" style="background:none;border:none;color:var(--grey);cursor:pointer;font-size:.8rem;padding:0 4px;">✕</button>
+            </div>
+            <div style="font-size:.58rem;color:var(--grey);">${renderActionFields(b,a,aIdx)}</div>
+          </div>
+        `).join('')}
+        <button onclick="addAction(${b.id})" style="font-size:.58rem;padding:4px;background:rgba(255,255,255,.04);border:1px dashed var(--border2);border-radius:2px;color:var(--grey);cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.1em;">+ Add Action</button>
+      </div>
+    </div>
+  `).join('');
+  updateJsonPreview();
+}
+
+function buildEffectData() {
+  if (effectBlocks.length === 0) return null;
+  return { effects: effectBlocks.map(b => ({ trigger: b.trigger, condition: b.condition, actions: b.actions })) };
+}
+
+function toggleJsonPreview() {
+  const el = document.getElementById('effect-json-preview');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+  updateJsonPreview();
+}
+
+function updateJsonPreview() {
+  const el = document.getElementById('effect-json-preview');
+  if (el.style.display !== 'none') {
+    el.textContent = JSON.stringify(buildEffectData(), null, 2);
+  }
+}
+
 async function addCard() {
   const name    = document.getElementById('c-name').value.trim();
   const element = document.getElementById('c-element').value;
@@ -750,6 +968,10 @@ async function addCard() {
 
   btn.disabled = true; btn.textContent = 'Adding…';
 
+  const hasBreak = document.getElementById('c-has-break').checked;
+  const breakType = document.getElementById('c-break-type').value;
+  const effectData = buildEffectData();
+
   const { data, error } = await sb.from('cards').insert({
     name,
     element,
@@ -764,6 +986,9 @@ async function addCard() {
     special_ability: ability || null,
     image_url:    img    || null,
     added_by:     currentUser?.id,
+    has_break:    hasBreak,
+    break_type:   hasBreak ? breakType : null,
+    effect_data:  effectData,
   }).select().single();
 
   btn.disabled = false; btn.textContent = '+ Add Card';
@@ -776,6 +1001,9 @@ async function addCard() {
   showToast(`"${name}" added to the database!`);
 
   // clear form
+  effectBlocks = []; blockIdCounter = 0; renderEffectBlocks();
+  document.getElementById('c-has-break').checked = false;
+  document.getElementById('c-break-type').style.display = 'none';
   ['c-name','c-atk','c-def','c-aether','c-race','c-artist','c-desc','c-ability','c-img'].forEach(id => {
     document.getElementById(id).value = '';
   });
