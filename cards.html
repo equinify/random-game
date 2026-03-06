@@ -389,6 +389,12 @@
           <option value="soul bond servant">Soul Bond Servant</option>
         </select>
 
+        <div class="filter-label">Set</div>
+        <select class="filter-select" id="f-set" onchange="applyFilters()">
+          <option value="">All Sets</option>
+          <option value="modern">Modern</option>
+          <option value="legacy">Legacy</option>
+        </select>
         <div class="filter-label">Rarity</div>
         <select class="filter-select" id="f-rarity" onchange="applyFilters()">
           <option value="">All Rarities</option>
@@ -436,6 +442,12 @@
             <option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option>
             <option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option>
             <option value="promo">Promo</option>
+          </select>
+        </div>
+        <div class="field"><label>Set / Version</label>
+          <select id="c-set">
+            <option value="modern">Modern</option>
+            <option value="legacy">Legacy</option>
           </select>
         </div>
         <div class="row-2">
@@ -616,6 +628,8 @@ function applyFilters() {
     if (type    && c.card_type !== type)  return false;
     if (rarity  && c.rarity !== rarity)   return false;
     if (aether  && c.aether_cost > parseInt(aether)) return false;
+    const set = document.getElementById('f-set')?.value;
+    if (set && c.card_set !== set) return false;
     return true;
   });
 
@@ -669,6 +683,7 @@ function renderGrid(cards) {
         <div class="card-name">${escHtml(c.name)}</div>
         <div class="card-meta">
           <span class="card-type-badge">${escHtml(c.card_type)}</span>
+          ${c.card_set?`<span class="card-type-badge" style="border-color:${c.card_set==='legacy'?'rgba(245,197,24,.3)':'rgba(79,195,247,.3)'};color:${c.card_set==='legacy'?'#f5c518':'#4fc3f7'}">${c.card_set==='legacy'?'Legacy':'Modern'}</span>`:''}
           <span class="card-element el-${c.element}">${c.element}</span>
         </div>
         ${(c.atk !== null || c.def !== null) ? `
@@ -986,6 +1001,7 @@ async function addCard() {
     special_ability: ability || null,
     image_url:    img    || null,
     added_by:     currentUser?.id,
+    card_set:     document.getElementById('c-set').value || 'modern',
     has_break:    hasBreak,
     break_type:   hasBreak ? breakType : null,
     effect_data:  effectData,
@@ -1002,6 +1018,7 @@ async function addCard() {
 
   // clear form
   effectBlocks = []; blockIdCounter = 0; renderEffectBlocks();
+  document.getElementById('c-set').value = 'modern';
   document.getElementById('c-has-break').checked = false;
   document.getElementById('c-break-type').style.display = 'none';
   ['c-name','c-atk','c-def','c-aether','c-race','c-artist','c-desc','c-ability','c-img'].forEach(id => {
