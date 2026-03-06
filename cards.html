@@ -624,11 +624,16 @@ async function init() {
 // Re-check permissions when auth state fires (handles slow session restore)
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; updateAuthUI(); return; }
-  if (session?.user && (!currentProfile || currentProfile.id !== session.user.id)) {
+  if (session?.user) {
+    // Show email immediately while profile loads
     currentUser = session.user;
-    const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-    currentProfile = data;
-    updateAuthUI();
+    document.getElementById('topbar-username').textContent = session.user.email;
+    document.getElementById('topbar-signout-btn').style.display = '';
+    if (!currentProfile || currentProfile.id !== session.user.id) {
+      const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      currentProfile = data;
+      updateAuthUI();
+    }
   }
 });
 
