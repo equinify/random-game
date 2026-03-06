@@ -89,48 +89,61 @@
 
     /* ── GAME SCREEN ── */
     #game-screen { flex-direction:column; overflow:hidden; }
-    #game-wrap { flex:1; display:grid; grid-template-columns:52px 1fr 110px; grid-template-rows:1fr 1fr; overflow:hidden; }
+    /* ── GAME LAYOUT ── */
+    #game-wrap { flex:1; display:flex; flex-direction:column; overflow:hidden; }
 
-    /* ORB ZONE */
-    .orb-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:6px 4px; border-right:1px solid var(--border2); background:rgba(0,0,0,.2); }
-    .orb-zone.opp { border-bottom:1px solid var(--border2); }
-    .orb-zone.mine { border-top:1px solid var(--border2); }
-    .orb-card { width:36px; height:50px; border-radius:2px; border:1px solid rgba(245,197,24,.3); background:linear-gradient(135deg,#1a1a2e,#16213e); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .orb-card.corrupt { background:var(--s3); border-color:var(--border2); opacity:.4; }
+    /* OPP HAND ROW face-down */
+    .opp-hand-row { display:flex; align-items:center; justify-content:center; gap:4px; padding:4px 12px; border-bottom:1px solid var(--border2); flex-shrink:0; background:rgba(0,0,0,.25); min-height:36px; }
+    .opp-hand-card { width:28px; height:40px; border-radius:2px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(135deg,#1a1a2e,#16213e); flex-shrink:0; }
+
+    /* HALF GRIDS */
+    .half-grid { flex:1; display:grid; grid-template-columns:54px 1fr 80px; overflow:hidden; min-height:0; }
+    .opp-half { border-bottom:none; }
+    .my-half { }
+    .half-center { display:flex; flex-direction:column; overflow:hidden; }
+    .field-divider-line { height:2px; background:var(--border2); flex-shrink:0; position:relative; }
+    .field-divider-line::after { content:''; position:absolute; left:50%; transform:translateX(-50%); top:-2px; width:40px; height:6px; background:var(--border); border-radius:2px; }
+
+    /* ORB ZONE - vertical strip */
+    .orb-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:5px 3px; background:rgba(0,0,0,.2); }
+    .orb-zone.opp { border-right:1px solid var(--border2); border-bottom:1px solid var(--border2); }
+    .orb-zone.mine { border-right:1px solid var(--border2); border-top:1px solid var(--border2); }
+    .orb-card { width:38px; height:52px; border-radius:2px; border:1px solid rgba(245,197,24,.3); background:linear-gradient(135deg,#1a1a2e,#16213e); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .orb-card.corrupt { background:var(--s3); border-color:var(--border2); opacity:.35; }
     .orb-card.clickable:hover { border-color:var(--red); box-shadow:0 0 10px rgba(229,57,53,.5); transform:scale(1.05); }
-    .orb-card-inner { width:65%; height:65%; border:1px solid rgba(255,255,255,.1); border-radius:50%; }
+    .orb-card-inner { width:60%; height:60%; border:1px solid rgba(255,255,255,.1); border-radius:50%; }
 
-    /* CENTER FIELD */
+    /* CENTER COL */
     .center-col { display:flex; flex-direction:column; overflow:hidden; }
-    .player-info-bar { display:flex; align-items:center; gap:10px; padding:5px 12px; border-bottom:1px solid var(--border2); flex-shrink:0; background:rgba(0,0,0,.3); }
+    .player-info-bar { display:flex; align-items:center; gap:10px; padding:4px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; background:rgba(0,0,0,.3); }
     .player-info-bar.mine { border-top:1px solid var(--border2); border-bottom:none; }
-    .pname { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.12em; color:var(--white); }
-    .paether { font-family:'Cinzel',serif; font-size:.58rem; color:var(--blue); margin-left:auto; }
-    .pdeck { font-family:'Cinzel',serif; font-size:.54rem; color:var(--grey); }
+    .pname { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.12em; color:var(--white); }
+    .paether { font-family:'Cinzel',serif; font-size:.56rem; color:var(--blue); margin-left:auto; }
+    .pdeck { font-family:'Cinzel',serif; font-size:.52rem; color:var(--grey); }
 
-    /* SERVANT ZONE */
-    .servant-zone { flex:1; position:relative; overflow:hidden; }
-    .servant-zone-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.3em; text-transform:uppercase; color:var(--border2); pointer-events:none; white-space:nowrap; }
-    .field-divider-line { height:1px; background:var(--border2); flex-shrink:0; position:relative; }
-    .field-divider-line::after { content:''; position:absolute; left:50%; transform:translateX(-50%); top:-2px; width:30px; height:5px; background:var(--border); border-radius:2px; }
-
-    /* CASTER ZONE */
-    .caster-zone { height:64px; border-top:1px solid var(--border2); display:flex; align-items:center; gap:6px; padding:0 10px; overflow-x:auto; flex-shrink:0; }
-    .caster-zone.opp { border-top:none; border-bottom:1px solid var(--border2); }
+    /* CASTER ZONES */
+    .caster-zone { height:58px; display:flex; align-items:center; gap:6px; padding:0 8px; overflow-x:auto; flex-shrink:0; }
+    .caster-zone.opp { border-bottom:1px solid var(--border2); }
+    .caster-zone.mine { border-top:1px solid var(--border2); }
     .caster-zone::-webkit-scrollbar { height:2px; }
     .caster-zone::-webkit-scrollbar-thumb { background:var(--dim); }
-    .caster-card { width:44px; height:52px; border-radius:2px; border:1px solid var(--border2); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; overflow:hidden; flex-shrink:0; }
+    .caster-card { width:42px; height:50px; border-radius:2px; border:1px solid var(--border2); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; overflow:hidden; flex-shrink:0; }
     .caster-card:hover:not(.tapped) { border-color:rgba(255,255,255,.3); transform:translateY(-2px); }
     .caster-card.tapped { opacity:.45; transform:rotate(15deg); margin:0 7px; cursor:default; filter:saturate(.3); }
     .caster-card img { width:100%; height:100%; object-fit:cover; }
-    .caster-card-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:.55rem; color:var(--dim); }
-    .coin-tok { width:34px; height:34px; border-radius:50%; border:2px solid var(--gold); background:rgba(245,197,24,.08); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:.55rem; color:var(--gold); cursor:pointer; transition:all .2s; flex-shrink:0; }
+    .caster-card-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:.5rem; color:var(--dim); }
+    .coin-tok { width:32px; height:32px; border-radius:50%; border:2px solid var(--gold); background:rgba(245,197,24,.08); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:.52rem; color:var(--gold); cursor:pointer; transition:all .2s; flex-shrink:0; }
     .coin-tok:hover { background:rgba(245,197,24,.18); transform:scale(1.1); }
     .coin-tok.spent { opacity:.25; cursor:default; border-color:var(--dim); color:var(--dim); }
 
-    /* RIGHT COL — DECK + GY */
-    .right-col { display:flex; flex-direction:column; align-items:center; justify-content:space-around; padding:10px 6px; border-left:1px solid var(--border2); gap:8px; }
-    .right-col.opp { border-bottom:1px solid var(--border2); justify-content:space-around; }
+    /* SERVANT ZONES */
+    .servant-zone { flex:1; position:relative; overflow:hidden; min-height:0; }
+    .servant-zone-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Cinzel',serif; font-size:.52rem; letter-spacing:.28em; text-transform:uppercase; color:var(--border2); pointer-events:none; white-space:nowrap; }
+    .field-divider-line { height:1px; background:var(--border2); flex-shrink:0; }
+
+    /* DECK+GY COL */
+    .right-col { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 4px; border-left:1px solid var(--border2); gap:6px; }
+    .right-col.opp { border-bottom:1px solid var(--border2); }
     .deck-pile { width:60px; height:82px; border-radius:3px; border:1px solid rgba(255,255,255,.15); background:linear-gradient(135deg,#1a1a2e,#16213e); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .2s; }
     .deck-pile:hover { border-color:rgba(255,255,255,.3); }
     .deck-pile-label { font-family:'Cinzel',serif; font-size:.44rem; letter-spacing:.1em; color:rgba(255,255,255,.4); text-transform:uppercase; }
@@ -278,58 +291,68 @@
 <!-- GAME -->
 <div class="screen" id="game-screen">
   <div id="game-wrap">
-    <!-- OPP ORB ZONE -->
-    <div class="orb-zone opp" id="opp-orb-zone"></div>
-    <!-- OPP CENTER -->
-    <div class="center-col">
-      <div class="player-info-bar">
-        <span class="pname" id="opp-name">Opponent</span>
-        <span class="paether" id="opp-aether">✦ 0</span>
-        <span class="pdeck" id="opp-deck-ct">Deck: 0</span>
+
+    <!-- OPP HAND FACE DOWN -->
+    <div class="opp-hand-row" id="opp-hand-row"></div>
+
+    <!-- OPP HALF: orb-zone | center(caster+field) | deck+gy -->
+    <div class="half-grid opp-half">
+      <div class="orb-zone opp" id="opp-orb-zone"></div>
+      <div class="half-center">
+        <div class="player-info-bar">
+          <span class="pname" id="opp-name">Opponent</span>
+          <span class="paether" id="opp-aether">✦ 0</span>
+          <span class="pdeck" id="opp-deck-ct">Deck: 0</span>
+        </div>
+        <div class="caster-zone opp" id="opp-caster-zone"></div>
+        <div class="servant-zone" id="opp-servant-zone">
+          <div class="servant-zone-label">Opponent Field</div>
+        </div>
       </div>
-      <div class="caster-zone opp" id="opp-caster-zone"></div>
-      <div class="servant-zone" id="opp-servant-zone">
-        <div class="servant-zone-label">Opponent Field</div>
-      </div>
-      <div class="field-divider-line"></div>
-      <div class="servant-zone" id="my-servant-zone">
-        <div class="servant-zone-label">Your Field</div>
-      </div>
-      <div class="caster-zone" id="my-caster-zone"></div>
-      <div class="player-info-bar mine">
-        <span class="pname" id="my-name">You</span>
-        <span class="paether" id="my-aether">✦ 0</span>
-        <span class="pdeck" id="my-deck-ct">Deck: 0</span>
-      </div>
-    </div>
-    <!-- OPP RIGHT -->
-    <div class="right-col opp">
-      <div class="deck-pile" onclick="showToast('Opponent deck face-down')">
-        <div class="deck-pile-label">Deck</div>
-        <div class="deck-pile-count" id="opp-deck-num">0</div>
-      </div>
-      <div class="gy-pile" onclick="showGY('opp')">
-        <div class="gy-label">GY</div>
-        <div class="gy-count" id="opp-gy-num">0</div>
+      <div class="right-col opp">
+        <div class="deck-pile" onclick="showToast('Opponent deck')">
+          <div class="deck-pile-label">Deck</div>
+          <div class="deck-pile-count" id="opp-deck-num">0</div>
+        </div>
+        <div class="gy-pile" onclick="showGY('opp')">
+          <div class="gy-label">GY</div>
+          <div class="gy-count" id="opp-gy-num">0</div>
+        </div>
       </div>
     </div>
-    <!-- MY ORB ZONE -->
-    <div class="orb-zone mine" id="my-orb-zone"></div>
-    <!-- (center-col spans both rows via CSS) -->
-    <!-- MY RIGHT -->
-    <div class="right-col">
-      <div class="deck-pile" onclick="showToast('Your deck')">
-        <div class="deck-pile-label">Deck</div>
-        <div class="deck-pile-count" id="my-deck-num">0</div>
+
+    <!-- FIELD DIVIDER -->
+    <div class="field-divider-line"></div>
+
+    <!-- MY HALF: orb-zone | center(field+caster) | deck+gy -->
+    <div class="half-grid my-half">
+      <div class="orb-zone mine" id="my-orb-zone"></div>
+      <div class="half-center">
+        <div class="servant-zone" id="my-servant-zone">
+          <div class="servant-zone-label">Your Field</div>
+        </div>
+        <div class="caster-zone mine" id="my-caster-zone"></div>
+        <div class="player-info-bar mine">
+          <span class="pname" id="my-name">You</span>
+          <span class="paether" id="my-aether">✦ 0</span>
+          <span class="pdeck" id="my-deck-ct">Deck: 0</span>
+        </div>
       </div>
-      <div class="gy-pile" onclick="showGY('me')">
-        <div class="gy-label">GY</div>
-        <div class="gy-count" id="my-gy-num">0</div>
+      <div class="right-col">
+        <div class="deck-pile" onclick="showToast('Your deck')">
+          <div class="deck-pile-label">Deck</div>
+          <div class="deck-pile-count" id="my-deck-num">0</div>
+        </div>
+        <div class="gy-pile" onclick="showGY('me')">
+          <div class="gy-label">GY</div>
+          <div class="gy-count" id="my-gy-num">0</div>
+        </div>
       </div>
     </div>
+
   </div>
 
-  <!-- HAND -->
+  <!-- MY HAND -->
   <div id="hand-wrap"></div>
 
   <!-- ACTION BAR -->
@@ -344,6 +367,7 @@
     <button class="a-btn danger" id="btn-concede" onclick="concede()">Concede</button>
   </div>
 </div>
+
 
 <!-- Card Detail Modal -->
 <div class="modal-ov" id="card-modal">
@@ -785,6 +809,9 @@ function renderGame() {
   document.getElementById('my-gy-num').textContent  = m.graveyard.length;
   document.getElementById('opp-gy-num').textContent = o.graveyard.length;
   if (myProfile) document.getElementById('my-name').textContent=myProfile.username;
+  // Opponent hand face-down
+  const oppHandEl = document.getElementById('opp-hand-row');
+  oppHandEl.innerHTML = oppGs().hand.map(()=>`<div class="opp-hand-card"></div>`).join('');
   updatePhasePill();
   updateActionBtns();
   // show mulligan modal if needed
