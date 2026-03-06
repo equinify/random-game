@@ -471,6 +471,7 @@ async function createRoom() {
   }).select().single();
   if (error) { err.textContent=error.message; return; }
   duelId=data.id; duelCode=code; mySlot='player1';
+  _lastUpdated = data.updated_at;
   document.getElementById('w-code').textContent=code;
   switchScreen('waiting-screen');
   subscribeRoom(duelId);
@@ -521,6 +522,7 @@ function subscribeRoom(id) {
   _pollInterval = setInterval(async () => {
     const { data } = await sb.from('duels').select('*').eq('id', id).single();
     if (!data) return;
+    console.log('[Poll] status:', data.status, 'updated_at:', data.updated_at, 'last:', _lastUpdated);
     if (data.updated_at !== _lastUpdated) {
       _lastUpdated = data.updated_at;
       handleRoomUpdate(data);
