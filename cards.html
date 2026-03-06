@@ -27,7 +27,11 @@
     .role-creator{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08)}
     #signout-btn{display:none;color:#666}
     
-    #page{display:flex;min-height:calc(100vh - 50px)}
+    #page{display:flex;min-height:calc(100vh - 50px);flex-direction:column}
+    #card-controls{display:flex;align-items:center;gap:15px;padding:12px 20px;border-bottom:1px solid var(--border);background:rgba(8,8,8,0.5)}
+    #count{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;color:var(--grey)}
+    #refresh-btn{flex-shrink:0}
+    #page-content{display:flex;flex:1}
     #sidebar{width:250px;border-right:1px solid var(--border);padding:20px;overflow-y:auto;height:calc(100vh - 50px)}
     .section-title{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:#555;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
     #search{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:8px;color:var(--white);font-family:inherit;font-size:.9rem;margin-bottom:20px}
@@ -74,8 +78,7 @@
   <a class="back-btn" href="index.html">← Back</a>
   <div class="topbar-title">Card Database</div>
   <div id="topbar-right">
-    <button class="topbar-btn" id="refresh-btn" onclick="loadCards()">🔄</button>
-    <button class="topbar-btn" id="add-btn" onclick="openAddModal()">✏️ Add</button>
+    <button class="topbar-btn" id="add-btn" onclick="openAddModal()">✏️ Add Card</button>
     <div class="divider" id="div1"></div>
     <span id="username"></span>
     <span class="role-badge" id="role-badge"></span>
@@ -84,8 +87,19 @@
   </div>
 </div>
 
+<div id="card-controls">
+  <div id="count">Loading…</div>
+  <button class="topbar-btn" id="refresh-btn" onclick="loadCards()">🔄 Refresh</button>
+</div>
+
 <div id="page">
-  <div id="sidebar">
+  <div id="card-controls">
+    <div id="count">Loading…</div>
+    <button class="topbar-btn" id="refresh-btn" onclick="loadCards()">🔄 Refresh</button>
+  </div>
+  
+  <div id="page-content">
+    <div id="sidebar">
     <div class="section-title">Search</div>
     <input id="search" type="text" placeholder="Search cards…" oninput="filter()"/>
     
@@ -120,9 +134,9 @@
   </div>
 
   <div id="main">
-    <div class="card-count" id="count">Loading…</div>
     <div id="grid"></div>
     <div id="empty" style="display:none">No cards found</div>
+  </div>
   </div>
 </div>
 
