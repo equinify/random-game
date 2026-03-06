@@ -118,12 +118,12 @@
   <a class="back-btn" href="index.html">← Back</a>
   <div class="topbar-title">Card Database</div>
   <div id="topbar-right">
-    <button id="toggle-add-btn" onclick="openAddModal()">✏️ Add Card</button>
+    <button id="toggle-add-btn" onclick="openAddModal()" style="display:none;"></button>
     <div class="topbar-divider" id="div-username" style="display:none;"></div>
-    <span id="topbar-username">Editor User</span>
-    <span class="role-badge role-creator" id="topbar-badge">👑 Creator</span>
-    <div class="topbar-divider" id="div-action"></div>
-    <button id="topbar-signout-btn" onclick="signOut()">Sign Out</button>
+    <span id="topbar-username"></span>
+    <span class="role-badge" id="topbar-badge" style="display:none;"></span>
+    <div class="topbar-divider" id="div-action" style="display:none;"></div>
+    <button id="topbar-signout-btn" onclick="signOut()" style="display:none;">Sign Out</button>
   </div>
 </div>
 
@@ -245,21 +245,35 @@ function updateAuthUI(){
   const uname = document.getElementById('topbar-username');
   const badge = document.getElementById('topbar-badge');
   const toggleBtn = document.getElementById('toggle-add-btn');
+  const signoutBtn = document.getElementById('topbar-signout-btn');
+  const divUser = document.getElementById('div-username');
+  const divAction = document.getElementById('div-action');
   
   if(currentProfile){
     uname.textContent = currentProfile.username || currentUser?.email || '';
     const role = currentProfile.role;
     badge.textContent = ROLE_LABELS[role] || role;
     badge.className = `role-badge role-${role}`;
-    toggleBtn.style.display = can(CAN_ADD) ? '' : 'none';
+    badge.style.display = '';
+    divUser.style.display = '';
+    divAction.style.display = '';
+    toggleBtn.style.display = can(CAN_ADD) ? 'inline-block' : 'none';
+    toggleBtn.textContent = '✏️ Add Card';
+    signoutBtn.style.display = '';
   } else if(currentUser){
     uname.textContent = currentUser.email;
+    badge.style.display = 'none';
+    divUser.style.display = '';
+    divAction.style.display = '';
     toggleBtn.style.display = 'none';
+    signoutBtn.style.display = '';
   } else {
-    uname.textContent = 'Editor User (Demo)';
-    badge.className = 'role-badge role-creator';
-    badge.textContent = '👑 Creator';
-    toggleBtn.style.display = '';
+    uname.textContent = '';
+    badge.style.display = 'none';
+    divUser.style.display = 'none';
+    divAction.style.display = 'none';
+    toggleBtn.style.display = 'none';
+    signoutBtn.style.display = 'none';
   }
 }
 
