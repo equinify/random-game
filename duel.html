@@ -506,28 +506,52 @@ async function cancelRoom() {
 }
 
 // ── Realtime ──────────────────────────────────────────────────
+let _pollInterval = null;
+let _lastUpdated = null;
+
 function subscribeRoom(id) {
+  // Realtime channel
   duelSub = sb.channel(`duel-${id}`)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'duels',filter:`id=eq.${id}`}, payload => {
-      const row=payload.new;
-      gs=row.game_state;
-      if (row.status==='pregame' && !document.getElementById('pregame-screen').classList.contains('active')) {
-        enterPregame();
-      } else if (row.status==='mulligan' && !document.getElementById('mulligan-screen').classList.contains('active')) {
-        enterMulligan();
-      } else if (row.status==='active' && !document.getElementById('game-screen').classList.contains('active')) {
-        enterGame();
-      } else if (row.status==='active') {
-        renderGame();
-      } else if (row.status==='finished') {
-        showResult(row.winner_id);
-      } else if (row.status==='pregame') {
-        renderPregame();
-      } else if (row.status==='mulligan') {
-        renderMulliganStatus();
-      }
+      handleRoomUpdate(payload.new);
     })
     .subscribe();
+
+  // Polling fallback every 2 seconds
+  _pollInterval = setInterval(async () => {
+    const { data } = await sb.from('duels').select('*').eq('id', id).single();
+    if (!data) return;
+    if (data.updated_at !== _lastUpdated) {
+      _lastUpdated = data.updated_at;
+      handleRoomUpdate(data);
+    }
+  }, 2000);
+}
+
+function stopPolling() {
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+  if (duelSub) { sb.removeChannel(duelSub); duelSub = null; }
+}
+
+function handleRoomUpdate(row) {
+  gs = row.game_state;
+  const cur = document.querySelector('.screen.active')?.id;
+  if (row.status==='pregame' && cur!=='pregame-screen') {
+    enterPregame();
+  } else if (row.status==='mulligan' && cur!=='mulligan-screen') {
+    enterMulligan();
+  } else if (row.status==='active' && cur!=='game-screen') {
+    enterGame();
+  } else if (row.status==='active') {
+    renderGame();
+  } else if (row.status==='finished') {
+    stopPolling();
+    showResult(row.winner_id);
+  } else if (row.status==='pregame') {
+    renderPregame();
+  } else if (row.status==='mulligan') {
+    renderMulliganStatus();
+  }
 }
 
 // ── Game State Builder ────────────────────────────────────────
@@ -1134,6 +1158,7 @@ function switchScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
+window.addEventListener('beforeunload', stopPolling);
 document.addEventListener('keydown', e=>{
   if (e.key==='Escape') ['card-modal','pos-modal','gy-modal'].forEach(closeModal);
 });
