@@ -330,11 +330,13 @@ async function init() {
     document.getElementById('topbar-username').textContent = session.user.email;
 
     // load profile for username
-    const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
+    const { data: profile } = await sb.from('profiles').select('username, role').eq('id', session.user.id).single();
     if (profile) {
       document.getElementById('topbar-username').textContent = profile.username;
+      const so = document.getElementById('topbar-signout-btn');
+      if (so) so.style.display='';
       const badge = document.getElementById('topbar-badge');
-      if (badge) { badge.textContent = ROLE_LABELS[profile.role]||profile.role; badge.className=`role-badge role-${profile.role}`; badge.style.display=''; }
+      if (badge && profile.role) { badge.textContent = ROLE_LABELS[profile.role]||profile.role; badge.className=`role-badge role-${profile.role}`; badge.style.display=''; }
     }
 
     await Promise.all([loadAllCards(), loadDecks()]);
