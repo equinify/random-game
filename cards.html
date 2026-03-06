@@ -13,8 +13,6 @@
       --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.06);
       --white:#f0f0f0; --grey:#888; --grey-dim:#444;
       --red:#e53935; --green:#4caf50;
-      --solis:#f5c518; --ignus:#ff5722; --silva:#66bb6a; --terra:#a1887f;
-      --luna:#ce93d8; --aqua:#4fc3f7; --aes:#90a4ae; --void:#616161;
     }
     html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'Crimson Pro',serif;}
     #topbar{position:sticky;top:0;z-index:50;background:rgba(8,8,8,0.95);border-bottom:1px solid var(--border2);backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 24px;height:49px;gap:8px;}
@@ -23,11 +21,8 @@
     .topbar-title{font-family:'Cinzel Decorative',serif;font-size:.9rem;color:var(--white);position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;}
     #topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
     .topbar-divider{width:1px;height:16px;background:var(--border);}
-    .topbar-btn{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--grey);cursor:pointer;transition:color .2s,border-color .2s;display:none;}
+    .topbar-btn{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--grey);cursor:pointer;transition:color .2s,border-color .2s;}
     .topbar-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3);}
-    .topbar-btn.show{display:inline-block;}
-    #toggle-add-btn{border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.06);color:#f5c518;}
-    #toggle-add-btn:hover{background:rgba(245,197,24,.14);}
     #topbar-username{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;color:var(--white);white-space:nowrap;}
     .role-badge{font-size:.55rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:2px 7px;border-radius:2px;font-weight:700;text-transform:uppercase;border:1px solid;}
     .role-creator{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08);}
@@ -55,7 +50,6 @@
     .card-tile:hover{border-color:rgba(255,255,255,.25);transform:translateY(-2px);}
     .card-image{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--grey-dim);font-size:.7rem;font-family:'Cinzel',serif;letter-spacing:.1em;text-align:center;}
     .card-image img{width:100%;height:100%;object-fit:cover;}
-    .card-image.no-img{padding:20px;}
     .card-body{padding:10px 10px 8px;flex:1;display:flex;flex-direction:column;gap:4px;}
     .card-name{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.06em;color:var(--white);line-height:1.3;}
     .card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;}
@@ -64,53 +58,9 @@
     .el-solis{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08);}
     .el-ignus{color:#ff5722;border-color:rgba(255,87,34,.3);background:rgba(255,87,34,.08);}
     .el-silva{color:#66bb6a;border-color:rgba(102,187,106,.3);background:rgba(102,187,106,.08);}
-    .el-terra{color:#a1887f;border-color:rgba(161,136,127,.3);background:rgba(161,136,127,.08);}
-    .el-luna{color:#ce93d8;border-color:rgba(206,147,216,.3);background:rgba(206,147,216,.08);}
-    .el-aqua{color:#4fc3f7;border-color:rgba(79,195,247,.3);background:rgba(79,195,247,.08);}
-    .el-aes{color:#90a4ae;border-color:rgba(144,164,174,.3);background:rgba(144,164,174,.08);}
-    .el-void{color:#616161;border-color:rgba(97,97,97,.3);background:rgba(97,97,97,.08);}
     .card-rarity{font-family:'Cinzel',serif;font-size:.46rem;letter-spacing:.1em;text-transform:uppercase;margin-top:auto;padding-top:6px;}
     .rar-common{color:#9e9e9e;}.rar-uncommon{color:#66bb6a;}.rar-rare{color:#42a5f5;}.rar-super-rare{color:#ab47bc;}
-    .rar-ultra-rare{color:#ffa726;}.rar-secret-rare{color:#ef5350;}.rar-hyper-rare{color:#f5c518;}.rar-repack{color:#78909c;}.rar-promo{color:#26c6da;}
-    .card-stats{display:flex;gap:8px;font-family:'Cinzel',serif;font-size:.52rem;color:var(--grey);margin-top:4px;}
     #empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--grey-dim);font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;}
-    #detail-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
-    #detail-overlay.open{opacity:1;pointer-events:all;}
-    #detail-box{background:var(--surface);border:1px solid var(--border);border-radius:3px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;transform:translateY(16px) scale(.97);transition:transform .25s ease;display:flex;}
-    #detail-overlay.open #detail-box{transform:translateY(0) scale(1);}
-    #detail-img{width:200px;flex-shrink:0;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--grey-dim);font-size:.65rem;font-family:'Cinzel',serif;text-align:center;padding:10px;}
-    #detail-img img{width:100%;height:100%;object-fit:cover;}
-    #detail-content{flex:1;padding:24px 22px;display:flex;flex-direction:column;gap:12px;}
-    #detail-close{position:absolute;top:12px;right:14px;background:none;border:none;cursor:pointer;color:var(--grey-dim);font-size:1rem;transition:color .2s;}
-    #detail-close:hover{color:var(--white);}
-    .detail-name{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--white);line-height:1.2;}
-    .detail-badges{display:flex;gap:6px;flex-wrap:wrap;}
-    .detail-section-label{font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--grey-dim);margin-bottom:3px;}
-    .detail-text{font-size:.88rem;color:var(--white);line-height:1.5;}
-    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
-    .detail-field{display:flex;flex-direction:column;gap:2px;}
-    .detail-value{font-family:'Cinzel',serif;font-size:.68rem;color:var(--white);}
-    .detail-btn{margin-top:auto;padding:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:var(--white);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s;width:100%;}
-    .detail-btn:hover{background:rgba(255,255,255,.14);}
-    #add-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;}
-    #add-modal.open{display:flex;}
-    #add-modal-box{background:var(--surface);border:1px solid var(--border);border-radius:4px;width:500px;max-width:100%;padding:28px;position:relative;flex-shrink:0;}
-    .modal-title{font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--white);margin-bottom:16px;text-align:center;}
-    .m-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--grey);font-size:1rem;cursor:pointer;}
-    .m-close:hover{color:var(--white);}
-    .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
-    .field label{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);}
-    .field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:.88rem;outline:none;transition:border-color .2s;width:100%;}
-    .field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(255,255,255,.3);}
-    .field select option{background:#111;}
-    .field textarea{resize:vertical;min-height:60px;}
-    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-    .submit-btn{padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:var(--white);font-family:'Cinzel',serif;font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;width:100%;}
-    .submit-btn:hover{background:rgba(255,255,255,.14);}
-    .submit-btn:disabled{opacity:.35;cursor:not-allowed;}
-    .form-msg{font-size:.7rem;text-align:center;min-height:14px;margin-top:8px;font-family:'Cinzel',serif;}
-    .form-err{color:var(--red);}
-    .form-ok{color:var(--green);}
   </style>
 </head>
 <body>
@@ -120,12 +70,11 @@
   <div class="topbar-title">Card Database</div>
   <div id="topbar-right">
     <button class="topbar-btn" id="refresh-btn" onclick="loadCards()">🔄 Refresh</button>
-    <button class="topbar-btn show" id="toggle-add-btn" onclick="openAddModal()">✏️ Add Card</button>
-    <div class="topbar-divider" id="div-username"></div>
-    <span id="topbar-username"></span>
+    <div class="topbar-divider" id="div-username" style="display:none;"></div>
+    <span id="topbar-username" style="display:none;"></span>
     <span class="role-badge" id="topbar-badge" style="display:none;"></span>
-    <div class="topbar-divider" id="div-action"></div>
-    <button class="topbar-btn" id="topbar-signout-btn" onclick="signOut()">Sign Out</button>
+    <div class="topbar-divider" id="div-action" style="display:none;"></div>
+    <button class="topbar-btn" id="topbar-signout-btn" style="display:none;" onclick="signOut()">Sign Out</button>
   </div>
 </div>
 
@@ -142,28 +91,20 @@
         <select class="filter-select" id="f-element" onchange="applyFilters()">
           <option value="">All Elements</option>
           <option value="solis">Solis</option><option value="ignus">Ignus</option>
-          <option value="silva">Silva</option><option value="terra">Terra</option>
-          <option value="luna">Luna</option><option value="aqua">Aqua</option>
-          <option value="aes">Aes</option><option value="void">Void</option>
+          <option value="silva">Silva</option>
         </select>
         <div class="filter-label">Type</div>
         <select class="filter-select" id="f-type" onchange="applyFilters()">
           <option value="">All Types</option>
-          <option value="barrier">Barrier</option><option value="caster">Caster</option>
-          <option value="conjure">Conjure</option><option value="deity">Deity</option>
-          <option value="servant">Servant</option><option value="soul bond servant">Soul Bond Servant</option>
+          <option value="caster">Caster</option><option value="barrier">Barrier</option>
         </select>
         <div class="filter-label">Rarity</div>
         <select class="filter-select" id="f-rarity" onchange="applyFilters()">
           <option value="">All Rarities</option>
           <option value="common">Common</option><option value="uncommon">Uncommon</option>
-          <option value="rare">Rare</option><option value="super rare">Super Rare</option>
-          <option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option>
-          <option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option>
-          <option value="promo">Promo</option>
         </select>
       </div>
-      <button class="reset-btn" style="margin-top:10px" onclick="resetFilters()">Reset Filters</button>
+      <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
     </div>
   </div>
 
@@ -174,8 +115,6 @@
         <span style="font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-dim);">Sort</span>
         <select class="sort-select" id="sort-by" onchange="applyFilters()">
           <option value="name">Name</option><option value="rarity">Rarity</option>
-          <option value="element">Element</option><option value="aether cost">Aether Cost</option>
-          <option value="atk">ATK</option><option value="def">DEF</option>
         </select>
         <select class="sort-select" id="sort-dir" onchange="applyFilters()">
           <option value="asc">↑</option><option value="desc">↓</option>
@@ -186,48 +125,6 @@
   </div>
 </div>
 
-<div id="detail-overlay" onclick="closeDetail(event)">
-  <div id="detail-box">
-    <div id="detail-img">No Image</div>
-    <div id="detail-content">
-      <button id="detail-close" onclick="closeDetailBtn()">✕</button>
-      <div class="detail-name" id="d-name"></div>
-      <div class="detail-badges" id="d-badges"></div>
-      <div id="d-desc-section"><div class="detail-section-label">Description</div><div class="detail-text" id="d-desc"></div></div>
-      <div id="d-ability-section"><div class="detail-section-label">Special Ability</div><div class="detail-text" id="d-ability"></div></div>
-      <div class="detail-grid" id="d-grid"></div>
-      <button class="detail-btn" id="d-edit-btn" style="display:none" onclick="openEditModal()">Edit Card</button>
-    </div>
-  </div>
-</div>
-
-<div id="add-modal">
-  <div id="add-modal-box">
-    <button class="m-close" onclick="closeAddModal()">✕</button>
-    <div class="modal-title" id="modal-title">✦ Add Card</div>
-    
-    <div class="field"><label>Name *</label><input id="c-name" type="text"/></div>
-    <div class="field"><label>Element</label><select id="c-element"><option value="void">Void</option><option value="solis">Solis</option><option value="ignus">Ignus</option><option value="silva">Silva</option><option value="terra">Terra</option><option value="luna">Luna</option><option value="aqua">Aqua</option><option value="aes">Aes</option></select></div>
-    <div class="field"><label>Type</label><select id="c-type"><option value="caster">Caster</option><option value="barrier">Barrier</option><option value="conjure">Conjure</option><option value="deity">Deity</option><option value="servant">Servant</option><option value="soul bond servant">Soul Bond Servant</option></select></div>
-    <div class="field"><label>Rarity</label><select id="c-rarity"><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare">Rare</option><option value="super rare">Super Rare</option><option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option><option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option><option value="promo">Promo</option></select></div>
-    
-    <div class="row-2">
-      <div class="field"><label>ATK</label><input id="c-atk" type="number" min="0"/></div>
-      <div class="field"><label>DEF</label><input id="c-def" type="number" min="0"/></div>
-    </div>
-    
-    <div class="field"><label>Aether Cost</label><input id="c-aether" type="number" min="0"/></div>
-    <div class="field"><label>Race / Trait</label><input id="c-race" type="text"/></div>
-    <div class="field"><label>Artist</label><input id="c-artist" type="text"/></div>
-    <div class="field"><label>Description</label><textarea id="c-desc"></textarea></div>
-    <div class="field"><label>Special Ability</label><textarea id="c-ability"></textarea></div>
-    <div class="field"><label>Image URL</label><input id="c-img" type="text"/></div>
-    
-    <button class="submit-btn" id="save-btn" onclick="saveCard()">Save Card</button>
-    <div class="form-msg" id="form-msg"></div>
-  </div>
-</div>
-
 <script>
 const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_dhuEDL-DJP4_mD4PUVIevg_1u_gjA-j';
@@ -235,85 +132,7 @@ window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const sb = window.sb;
 
 const ROLE_LABELS = {creator:'👑 Creator',admin:'🛡 Admin',card_editor:'✏️ Editor',moderator:'🔰 Mod',supporter:'💎 Supporter',player:'Player'};
-const CAN_ADD = ['creator','admin','card_editor'];
 const RARITY_ORDER = ['common','uncommon','rare','super rare','ultra rare','secret rare','hyper rare','repack','promo'];
-
-let allCards = [], currentCardIdx = null, editingIdx = null, currentUser = null, currentProfile = null;
-
-function myRole(){return currentProfile?.role||null;}
-function can(list){return list.includes(myRole());}
-
-function updateAuthUI(){
-  const uname = document.getElementById('topbar-username');
-  const badge = document.getElementById('topbar-badge');
-  const toggleBtn = document.getElementById('toggle-add-btn');
-  const signoutBtn = document.getElementById('topbar-signout-btn');
-  const divUser = document.getElementById('div-username');
-  const divAction = document.getElementById('div-action');
-  
-  if(currentProfile){
-    uname.textContent = currentProfile.username || currentUser?.email || '';
-    const role = currentProfile.role;
-    badge.textContent = ROLE_LABELS[role] || role;
-    badge.className = `role-badge role-${role}`;
-    badge.style.display = '';
-    divUser.style.display = '';
-    divAction.style.display = '';
-    toggleBtn.classList.toggle('show', can(CAN_ADD));
-    signoutBtn.classList.add('show');
-  } else if(currentUser){
-    uname.textContent = currentUser.email;
-    badge.style.display = 'none';
-    divUser.style.display = '';
-    divAction.style.display = '';
-    toggleBtn.classList.remove('show');
-    signoutBtn.classList.add('show');
-  } else {
-    uname.textContent = '';
-    badge.style.display = 'none';
-    divUser.style.display = 'none';
-    divAction.style.display = 'none';
-    toggleBtn.classList.remove('show');
-    signoutBtn.classList.remove('show');
-  }
-}
-
-async function init(){
-  try{
-    const{data:{session}} = await sb.auth.getSession();
-    if(session?.user){
-      currentUser = session.user;
-      const{data} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-      currentProfile = data;
-    }
-  }catch(e){console.error('[init auth]', e);}
-  updateAuthUI();
-  await loadCards();
-}
-
-sb.auth.onAuthStateChange(async(event, session)=>{
-  if(event === 'SIGNED_OUT'){
-    currentUser = null;
-    currentProfile = null;
-    updateAuthUI();
-    return;
-  }
-  if(session?.user){
-    currentUser = session.user;
-    try{
-      const{data} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-      currentProfile = data;
-    }catch(e){console.error('[auth change]', e);}
-    updateAuthUI();
-  }
-});
-
-async function signOut(){
-  await sb.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  updateAuthUI();
-}
 
 const CARD_DATA = [
   {
@@ -339,20 +158,83 @@ const CARD_DATA = [
   }
 ];
 
-async function loadCards(){
-  try {
-    console.log('[loadCards] Loading cards...');
-    allCards = CARD_DATA || [];
-    console.log('[loadCards] Loaded', allCards.length, 'cards');
-    applyFilters();
-  } catch(e) {
-    console.error('[loadCards] Error:', e.message);
-    document.getElementById('empty-state').textContent='Error: '+e.message;
+let allCards = [];
+let currentUser = null;
+let currentProfile = null;
+
+function updateAuthUI(){
+  const uname = document.getElementById('topbar-username');
+  const badge = document.getElementById('topbar-badge');
+  const signoutBtn = document.getElementById('topbar-signout-btn');
+  const divUser = document.getElementById('div-username');
+  const divAction = document.getElementById('div-action');
+  
+  if(currentProfile){
+    uname.textContent = currentProfile.username || currentUser?.email || '';
+    uname.style.display = '';
+    const role = currentProfile.role;
+    badge.textContent = ROLE_LABELS[role] || role;
+    badge.className = `role-badge role-${role}`;
+    badge.style.display = '';
+    divUser.style.display = '';
+    divAction.style.display = '';
+    signoutBtn.style.display = '';
+  } else if(currentUser){
+    uname.textContent = currentUser.email;
+    uname.style.display = '';
+    divUser.style.display = '';
+    divAction.style.display = '';
+    signoutBtn.style.display = '';
+  } else {
+    uname.style.display = 'none';
+    badge.style.display = 'none';
+    divUser.style.display = 'none';
+    divAction.style.display = 'none';
+    signoutBtn.style.display = 'none';
   }
 }
 
+async function init(){
+  try{
+    const{data:{session}} = await sb.auth.getSession();
+    if(session?.user){
+      currentUser = session.user;
+      const{data} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      currentProfile = data;
+    }
+  }catch(e){console.error('[init]', e);}
+  updateAuthUI();
+  loadCards();
+}
+
+sb.auth.onAuthStateChange(async(event, session)=>{
+  if(event === 'SIGNED_OUT'){
+    currentUser = null;
+    currentProfile = null;
+  } else if(session?.user){
+    currentUser = session.user;
+    try{
+      const{data} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      currentProfile = data;
+    }catch(e){console.error('[auth]', e);}
+  }
+  updateAuthUI();
+});
+
+async function signOut(){
+  await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  updateAuthUI();
+}
+
+function loadCards(){
+  allCards = CARD_DATA;
+  applyFilters();
+}
+
 function applyFilters(){
-  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const search = document.getElementById('search-input').value.toLowerCase();
   const element = document.getElementById('f-element').value;
   const type = document.getElementById('f-type').value;
   const rarity = document.getElementById('f-rarity').value;
@@ -360,184 +242,65 @@ function applyFilters(){
   const sortDir = document.getElementById('sort-dir').value;
 
   let filtered = allCards.filter(c=>{
-    if(search&&!c.name.toLowerCase().includes(search)&&!(c.description||'').toLowerCase().includes(search))return false;
-    if(element&&c.element!==element)return false;
-    if(type&&c['card type']!==type)return false;
-    if(rarity&&c.rarity!==rarity)return false;
+    if(search && !c.name.toLowerCase().includes(search)) return false;
+    if(element && c.element !== element) return false;
+    if(type && c['card type'] !== type) return false;
+    if(rarity && c.rarity !== rarity) return false;
     return true;
   });
 
   filtered.sort((a,b)=>{
-    let va=a[sortBy],vb=b[sortBy];
-    if(sortBy==='rarity'){va=RARITY_ORDER.indexOf(va);vb=RARITY_ORDER.indexOf(vb);}
-    if(va===null||va===undefined)va=sortDir==='asc'?Infinity:-Infinity;
-    if(vb===null||vb===undefined)vb=sortDir==='asc'?Infinity:-Infinity;
-    if(typeof va==='string')va=va.toLowerCase();
-    if(typeof vb==='string')vb=vb.toLowerCase();
-    if(va<vb)return sortDir==='asc'?-1:1;
-    if(va>vb)return sortDir==='asc'?1:-1;
+    let va = a[sortBy], vb = b[sortBy];
+    if(sortBy === 'rarity'){va = RARITY_ORDER.indexOf(va); vb = RARITY_ORDER.indexOf(vb);}
+    if(typeof va === 'string') va = va.toLowerCase();
+    if(typeof vb === 'string') vb = vb.toLowerCase();
+    if(va < vb) return sortDir === 'asc' ? -1 : 1;
+    if(va > vb) return sortDir === 'asc' ? 1 : -1;
     return 0;
   });
+
   renderGrid(filtered);
 }
 
 function resetFilters(){
-  document.getElementById('search-input').value='';
-  document.getElementById('f-element').value='';
-  document.getElementById('f-type').value='';
-  document.getElementById('f-rarity').value='';
+  document.getElementById('search-input').value = '';
+  document.getElementById('f-element').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-rarity').value = '';
   applyFilters();
 }
 
 function rarityClass(r){return 'rar-'+r.replace(/ /g,'-');}
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function renderGrid(cards){
-  const grid=document.getElementById('card-grid');
-  const label=document.getElementById('count-label');
-  label.textContent=`${cards.length} card${cards.length!==1?'s':''} found`;
-  if(cards.length===0){grid.innerHTML=`<div id="empty-state">No cards found.</div>`;return;}
-  grid.innerHTML=cards.map((c,i)=>`
-    <div class="card-tile" onclick="openDetail(${i})" style="animation-delay:${i*0.03}s">
-      <div class="card-image ${c['image url']?'':'no-img'}">
-        ${c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" onerror="console.error('Image failed:', '${escHtml(c['image url'])}'); this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`:'No Image'}
-      </div>
-      <div class="card-body">
-        <div class="card-name">${escHtml(c.name)}</div>
-        <div class="card-meta">
-          <span class="card-type-badge">${escHtml(c['card type'])}</span>
-          <span class="card-element el-${c.element}">${c.element}</span>
-        </div>
-        ${(c.atk!==null||c.def!==null)?`<div class="card-stats">${c.atk!==null?`ATK <span>${c.atk}</span>`:''} ${c.def!==null?`DEF <span>${c.def}</span>`:''} ${c['aether cost']!==undefined?`✦ <span>${c['aether cost']}</span>`:''}</div>`:''}
-        <div class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</div>
-      </div>
-    </div>`).join('');
-}
-
-function openDetail(idx){
-  const c=allCards[idx];if(!c)return;
-  currentCardIdx=idx;
-  const imgEl=document.getElementById('detail-img');
-  imgEl.innerHTML=c['image url']?`<img src="${escHtml(c['image url'])}" alt="${escHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='No Image'"/>`:'No Image';
-  document.getElementById('d-name').textContent=c.name;
-  document.getElementById('d-badges').innerHTML=`
-    <span class="card-element el-${c.element}">${c.element}</span>
-    <span class="card-type-badge">${escHtml(c['card type'])}</span>
-    <span class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</span>
-    ${c['aether cost']!==null?`<span class="card-type-badge">✦ ${c['aether cost']} Aether</span>`:''}`;
-  const descS=document.getElementById('d-desc-section');
-  document.getElementById('d-desc').textContent=c.description||'';
-  descS.style.display=c.description?'':'none';
-  const abilS=document.getElementById('d-ability-section');
-  document.getElementById('d-ability').textContent=c['special ability']||'';
-  abilS.style.display=c['special ability']?'':'none';
-  document.getElementById('d-grid').innerHTML=[
-    ['ATK',c.atk!==null?c.atk:'—'],['DEF',c.def!==null?c.def:'—'],
-    ['Race / Trait',c.race_trait||'—'],['Artist',c.artist||'—'],
-  ].map(([l,v])=>`<div class="detail-field"><div class="detail-section-label">${l}</div><div class="detail-value">${escHtml(String(v))}</div></div>`).join('');
+  const grid = document.getElementById('card-grid');
+  const label = document.getElementById('count-label');
+  label.textContent = `${cards.length} card${cards.length!==1?'s':''}`;
   
-  if(can(CAN_ADD)) {
-    document.getElementById('d-edit-btn').style.display = '';
-  }
-  
-  document.getElementById('detail-overlay').classList.add('open');
-}
-
-function closeDetail(e){if(e.target===document.getElementById('detail-overlay'))closeDetailBtn();}
-function closeDetailBtn(){document.getElementById('detail-overlay').classList.remove('open');currentCardIdx=null;}
-
-function openAddModal(){
-  editingIdx = null;
-  document.getElementById('modal-title').textContent = '✦ Add Card';
-  document.querySelectorAll('#add-modal input, #add-modal select, #add-modal textarea').forEach(el => el.value = '');
-  document.getElementById('form-msg').textContent = '';
-  document.getElementById('add-modal').classList.add('open');
-}
-
-function openEditModal(){
-  if(currentCardIdx === null) return;
-  const c = allCards[currentCardIdx];
-  editingIdx = currentCardIdx;
-  document.getElementById('modal-title').textContent = '✏️ Edit Card';
-  
-  document.getElementById('c-name').value = c.name;
-  document.getElementById('c-element').value = c.element;
-  document.getElementById('c-type').value = c['card type'];
-  document.getElementById('c-rarity').value = c.rarity;
-  document.getElementById('c-atk').value = c.atk || '';
-  document.getElementById('c-def').value = c.def || '';
-  document.getElementById('c-aether').value = c['aether cost'] || '';
-  document.getElementById('c-race').value = c.race_trait || '';
-  document.getElementById('c-artist').value = c.artist || '';
-  document.getElementById('c-desc').value = c.description || '';
-  document.getElementById('c-ability').value = c['special ability'] || '';
-  document.getElementById('c-img').value = c['image url'] || '';
-  
-  document.getElementById('form-msg').textContent = '';
-  closeDetailBtn();
-  document.getElementById('add-modal').classList.add('open');
-}
-
-function closeAddModal(){
-  document.getElementById('add-modal').classList.remove('open');
-}
-
-function saveCard(){
-  const name = document.getElementById('c-name').value.trim();
-  const msg = document.getElementById('form-msg');
-  const btn = document.getElementById('save-btn');
-  
-  if(!name){
-    msg.textContent = 'Card name is required';
-    msg.className = 'form-msg form-err';
+  if(cards.length === 0){
+    grid.innerHTML = '<div id="empty-state">No cards found.</div>';
     return;
   }
   
-  const card = {
-    id: editingIdx === null ? Math.max(...allCards.map(c => c.id || 0), 0) + 1 : allCards[editingIdx].id,
-    name,
-    element: document.getElementById('c-element').value,
-    'card type': document.getElementById('c-type').value,
-    rarity: document.getElementById('c-rarity').value,
-    atk: document.getElementById('c-atk').value ? parseInt(document.getElementById('c-atk').value) : null,
-    def: document.getElementById('c-def').value ? parseInt(document.getElementById('c-def').value) : null,
-    'aether cost': document.getElementById('c-aether').value ? parseInt(document.getElementById('c-aether').value) : 0,
-    race_trait: document.getElementById('c-race').value || null,
-    artist: document.getElementById('c-artist').value || null,
-    description: document.getElementById('c-desc').value || null,
-    'special ability': document.getElementById('c-ability').value || null,
-    'image url': document.getElementById('c-img').value || null,
-    'card set': 'modern',
-    'has break': false,
-    'break type': null,
-    'added_by': 'editor',
-    'created at': new Date().toISOString().split('T')[0],
-    'effect data': null
-  };
-  
-  btn.disabled = true;
-  msg.textContent = 'Saving...';
-  msg.className = 'form-msg';
-  
-  setTimeout(() => {
-    if(editingIdx === null) {
-      allCards.push(card);
-    } else {
-      allCards[editingIdx] = card;
-    }
-    
-    msg.textContent = editingIdx === null ? '✓ Card added!' : '✓ Card updated!';
-    msg.className = 'form-msg form-ok';
-    btn.disabled = false;
-    
-    setTimeout(() => {
-      closeAddModal();
-      applyFilters();
-    }, 1500);
-  }, 500);
+  grid.innerHTML = cards.map((c,i) => `
+    <div class="card-tile" style="animation-delay:${i*0.03}s">
+      <div class="card-image">
+        <img src="${c['image url']}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;" />
+      </div>
+      <div class="card-body">
+        <div class="card-name">${c.name}</div>
+        <div class="card-meta">
+          <span class="card-type-badge">${c['card type']}</span>
+          <span class="card-element el-${c.element}">${c.element}</span>
+        </div>
+        <div style="font-family:'Cinzel',serif;font-size:.5rem;color:var(--grey);margin-top:4px;">ATK ${c.atk} | DEF ${c.def} | ✦ ${c['aether cost']}</div>
+        <div class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
-if(document.readyState === 'loading') {
+if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
