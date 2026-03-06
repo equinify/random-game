@@ -88,8 +88,8 @@
     .mulligan-btn:hover { background:rgba(255,255,255,.13); }
 
     /* ── GAME SCREEN ── */
-    #game-screen { flex-direction:column; overflow:auto; align-items:center; background:var(--bg); }
-    #game-wrap { display:flex; flex-direction:column; overflow:hidden; width:380px; height:calc(100vh - 44px - 52px - 80px - 44px); flex-shrink:0; border:1px solid var(--border2); margin-top:4px; }
+    #game-screen { flex-direction:column; align-items:center; justify-content:flex-start; overflow:auto; background:var(--bg); padding-top:4px; }
+    #game-wrap { display:flex; flex-direction:column; overflow:hidden; width:380px; height:calc(100vh - 44px - 52px - 80px - 8px); flex-shrink:0; border:1px solid var(--border2); flex-grow:0; }
 
     /* OPP HAND — face-down cards across top */
     .opp-hand-row { display:flex; align-items:center; justify-content:center; gap:3px; padding:3px 8px; border-bottom:1px solid var(--border2); flex-shrink:0; background:rgba(0,0,0,.3); height:44px; }
@@ -175,7 +175,7 @@
     .pos-badge { position:absolute; top:2px; left:2px; font-size:.34rem; font-family:'Cinzel',serif; padding:1px 3px; border-radius:1px; background:rgba(0,0,0,.85); color:#fff; letter-spacing:.06em; }
 
     /* MY HAND */
-    #hand-wrap { height:80px; width:380px; border-top:1px solid var(--border2); display:flex; align-items:flex-end; gap:4px; padding:3px 10px 5px; overflow-x:auto; flex-shrink:0; background:rgba(0,0,0,.25); }
+    #hand-wrap { height:80px; width:380px; flex-shrink:0; flex-grow:0; border-top:1px solid var(--border2); display:flex; align-items:flex-end; gap:4px; padding:3px 10px 5px; overflow-x:auto; flex-shrink:0; background:rgba(0,0,0,.25); }
     #hand-wrap::-webkit-scrollbar { height:2px; }
     #hand-wrap::-webkit-scrollbar-thumb { background:var(--dim); }
     .h-card { flex-shrink:0; width:54px; border-radius:2px; border:1px solid rgba(255,255,255,.15); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; }
@@ -190,7 +190,7 @@
     .h-card-cost { font-family:'Cinzel',serif; font-size:.38rem; color:var(--blue); }
 
     /* ACTION BAR */
-    #action-bar { height:52px; width:380px; border-top:1px solid var(--border2); display:flex; align-items:center; gap:6px; padding:0 10px; flex-shrink:0; background:rgba(0,0,0,.4); }
+    #action-bar { height:52px; width:380px; flex-shrink:0; flex-grow:0; border-top:1px solid var(--border2); display:flex; align-items:center; gap:6px; padding:0 10px; flex-shrink:0; background:rgba(0,0,0,.4); }
     .a-btn { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; padding:7px 13px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; white-space:nowrap; }
     .a-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.06); }
     .a-btn:disabled { opacity:.25; cursor:not-allowed; }
@@ -421,6 +421,17 @@
       <button class="m-btn" style="width:auto;padding:8px 20px;" onclick="doMulligan()">↩ Mulligan Selected</button>
       <button class="m-btn" style="width:auto;padding:8px 20px;" onclick="keepHand()">✓ Keep Hand</button>
     </div>
+  </div>
+</div>
+
+
+<!-- Search Modal -->
+<div class="modal-ov" id="search-modal">
+  <div class="modal-box" style="width:680px;max-width:95vw;">
+    <button class="m-close" onclick="closeModal('search-modal')">✕</button>
+    <div class="m-title" id="search-modal-title">Search Deck</div>
+    <p style="font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.12em;color:var(--grey);margin-bottom:12px;text-transform:uppercase;">Select a card to add to your hand</p>
+    <div id="search-modal-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:60vh;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -947,6 +958,7 @@ function selectFieldCard(i) {
 }
 
 function targetFieldCard(i) {
+  if (handleEffectTargetClick(i)) return; // effect target takes priority
   if (!inAttackMode||selFieldIdx===null) return;
   const o=oppGs();
   const hasDef=o.field.some(s=>s.position==='defense');
@@ -1044,12 +1056,15 @@ async function resolveAttack(type, idx) {
   const m=myGs(), o=oppGs();
   const atk=m.field[selFieldIdx];
   const atkCard=getCard(atk.cardId);
+  // Trigger on_attack effect
+  await triggerEffects('on_attack', mySlot, { cardId:atk.cardId, fieldIdx:selFieldIdx });
 
   if (type==='orb') {
     const orbCardId=o.orbs[idx];
     o.orbs[idx]=false; // corrupt
     atk.rested=true;
     showToast(`Orb ${idx+1} corrupted!`, 2000);
+    await triggerEffects('on_orb_broken', opp(), { orbIdx:idx });
     // orb card goes to hand (or triggers break)
     if (orbCardId) {
       const orbC=getCard(orbCardId);
@@ -1072,8 +1087,8 @@ async function resolveAttack(type, idx) {
   } else {
     const def=o.field[idx];
     const defCard=getCard(def.cardId);
-    const atkPow=atkCard.atk||0;
-    const defPow=def.position==='defense'?(defCard.def||0):(defCard.atk||0);
+    const atkPow=getEffectiveAtk(mySlot,selFieldIdx);
+    const defPow=def.position==='defense'?getEffectiveDef(opp(),idx):getEffectiveAtk(opp(),idx);
     atk.rested=true;
     if (atkPow>defPow) {
       o.graveyard.push(def.cardId); o.field.splice(idx,1);
@@ -1112,7 +1127,9 @@ async function nextPhase() {
   const idx=PHASES.indexOf(phase());
   if (idx<PHASES.length-1) {
     gs.phase=PHASES[idx+1];
-    if (gs.phase==='draw') {
+    if (gs.phase==='recovery') {
+      await triggerPhaseEffects('turn_start', mySlot);
+    } else if (gs.phase==='draw') {
       if (gs.firstTurn) {
         // first turn player skips draw
         gs.phase='main';
@@ -1127,6 +1144,7 @@ async function nextPhase() {
       } else updateMsg('Battle Phase — select a servant to attack!');
     } else if (gs.phase==='end') {
       updateMsg('End Phase — passing turn.');
+      await triggerPhaseEffects('turn_end', mySlot);
     }
     updatePhasePill();
     await saveGs();
@@ -1271,6 +1289,401 @@ window.addEventListener('beforeunload', stopPolling);
 document.addEventListener('keydown', e=>{
   if (e.key==='Escape') ['card-modal','pos-modal','gy-modal'].forEach(closeModal);
 });
+
+
+// ══════════════════════════════════════════════════════════════
+//  EFFECT ENGINE
+// ══════════════════════════════════════════════════════════════
+
+// Chain queue — effects waiting to resolve
+let effectChain = [];
+let chainResolving = false;
+let pendingTargetCallback = null;  // set when waiting for player to pick a target
+let negateNext = false;            // set when a negate effect is active
+
+// ── Main trigger entry point ──────────────────────────────────
+async function triggerEffects(trigger, sourceSlot, context={}) {
+  // sourceSlot: 'player1' or 'player2'
+  // context: { cardId, fieldIdx, attackTarget, etc. }
+  const pgs = gs[sourceSlot];
+  
+  // Check all field cards for matching triggers
+  for (let i = 0; i < pgs.field.length; i++) {
+    const slot = pgs.field[i];
+    const card = getCard(slot.cardId);
+    if (!card?.effect_data?.effects) continue;
+    for (const eff of card.effect_data.effects) {
+      if (eff.trigger !== trigger) continue;
+      if (context.fieldIdx !== undefined && trigger === 'on_attack' && context.fieldIdx !== i) continue;
+      if (trigger === 'on_play' && context.fieldIdx !== i) continue;
+      if (trigger === 'on_destroy' && context.cardId !== slot.cardId) continue;
+      if (checkCondition(eff.condition, sourceSlot)) {
+        effectChain.push({ eff, sourceSlot, context, card, fieldIdx: i });
+      }
+    }
+  }
+
+  // Also check hand for on_play triggers (card just played)
+  if (trigger === 'on_play' && context.cardId) {
+    const card = getCard(context.cardId);
+    if (card?.effect_data?.effects) {
+      for (const eff of card.effect_data.effects) {
+        if (eff.trigger !== 'on_play') continue;
+        if (checkCondition(eff.condition, sourceSlot)) {
+          effectChain.push({ eff, sourceSlot, context, card, fieldIdx: context.fieldIdx });
+        }
+      }
+    }
+  }
+
+  await resolveChain();
+}
+
+async function triggerPhaseEffects(trigger, slot) {
+  const pgs = gs[slot];
+  for (let i = 0; i < pgs.field.length; i++) {
+    const card = getCard(pgs.field[i].cardId);
+    if (!card?.effect_data?.effects) continue;
+    for (const eff of card.effect_data.effects) {
+      if (eff.trigger !== trigger) continue;
+      if (checkCondition(eff.condition, slot)) {
+        effectChain.push({ eff, sourceSlot: slot, context: { fieldIdx: i }, card, fieldIdx: i });
+      }
+    }
+  }
+  await resolveChain();
+}
+
+// ── Condition checking ────────────────────────────────────────
+function checkCondition(cond, slot) {
+  if (!cond) return true;
+  const pgs = gs[slot], oppS = gs[slot==='player1'?'player2':'player1'];
+  switch(cond.type) {
+    case 'field_count': {
+      const count = pgs.field.length;
+      if (cond.operator==='gte') return count >= cond.value;
+      if (cond.operator==='lte') return count <= cond.value;
+      if (cond.operator==='eq')  return count === cond.value;
+      return true;
+    }
+    case 'has_element': return pgs.field.some(s => getCard(s.cardId)?.element === cond.element);
+    case 'life_orbs_lte': return pgs.orbs.filter(Boolean).length <= cond.value;
+    case 'opponent_field_count': {
+      const count = oppS.field.length;
+      if (cond.operator==='gte') return count >= cond.value;
+      if (cond.operator==='lte') return count <= cond.value;
+      return true;
+    }
+    default: return true;
+  }
+}
+
+// ── Chain resolution ──────────────────────────────────────────
+async function resolveChain() {
+  if (chainResolving || effectChain.length === 0) return;
+  chainResolving = true;
+
+  while (effectChain.length > 0) {
+    const item = effectChain.shift();
+    if (negateNext) {
+      negateNext = false;
+      showEffectToast(`${item.card.name}'s effect was negated!`);
+      continue;
+    }
+    await executeEffect(item);
+    await saveGs();
+    renderGame();
+  }
+
+  chainResolving = false;
+}
+
+// ── Execute a single effect ───────────────────────────────────
+async function executeEffect({ eff, sourceSlot, context, card }) {
+  const oppS = sourceSlot === 'player1' ? 'player2' : 'player1';
+  const isMyEffect = sourceSlot === mySlot;
+
+  for (const action of eff.actions) {
+    await executeAction(action, sourceSlot, oppS, context, card, isMyEffect);
+  }
+}
+
+async function executeAction(action, slot, oppSlotName, context, card, isMyEffect) {
+  const pgs = gs[slot], oppS = gs[oppSlotName];
+
+  switch(action.type) {
+
+    case 'draw': {
+      const n = action.amount || 1;
+      for (let i = 0; i < n; i++) {
+        if (pgs.deck.length === 0) { endGame(oppSlotName); return; }
+        pgs.hand.push(pgs.deck.shift());
+      }
+      showEffectToast(`${card.name}: Draw ${n} card${n>1?'s':''}!`);
+      break;
+    }
+
+    case 'gain_aether': {
+      pgs.aether += action.amount || 1;
+      showEffectToast(`${card.name}: +${action.amount} Aether!`);
+      break;
+    }
+
+    case 'extra_attack': {
+      if (slot === mySlot && context.fieldIdx !== undefined) {
+        gs[slot].field[context.fieldIdx].extraAttacks = (gs[slot].field[context.fieldIdx].extraAttacks||0) + (action.amount||1);
+        showEffectToast(`${card.name}: Gains ${action.amount} extra attack${action.amount>1?'s':''}!`);
+      }
+      break;
+    }
+
+    case 'protect': {
+      if (context.fieldIdx !== undefined) {
+        gs[slot].field[context.fieldIdx].protected = action.duration || 'until_end_of_turn';
+        showEffectToast(`${card.name}: Protected${action.duration==='permanent'?' permanently':' until end of turn'}!`);
+      }
+      break;
+    }
+
+    case 'boost': {
+      const targets = resolveTargets(action.target, slot, context);
+      for (const t of targets) {
+        t.atkBoost = (t.atkBoost||0) + (action.atk||0);
+        t.defBoost = (t.defBoost||0) + (action.def||0);
+      }
+      showEffectToast(`${card.name}: +${action.atk} ATK / +${action.def} DEF!`);
+      break;
+    }
+
+    case 'buff_element': {
+      const elem = action.element;
+      for (const s of pgs.field) {
+        if (getCard(s.cardId)?.element === elem) {
+          s.atkBoost = (s.atkBoost||0) + (action.atk||0);
+          s.defBoost = (s.defBoost||0) + (action.def||0);
+        }
+      }
+      showEffectToast(`${card.name}: All ${elem} servants buffed!`);
+      break;
+    }
+
+    case 'destroy': {
+      if (action.target === 'all_opponent_servants') {
+        oppS.field.forEach(s => oppS.graveyard.push(s.cardId));
+        oppS.field = [];
+        showEffectToast(`${card.name}: All opponent servants destroyed!`);
+      } else if (action.target === 'self') {
+        pgs.field = pgs.field.filter(s => s.cardId !== card.id);
+        pgs.graveyard.push(card.id);
+        showEffectToast(`${card.name}: Destroyed itself!`);
+      } else if (action.target === 'selected_opponent_servant') {
+        if (!isMyEffect) break; // only active player targets
+        await awaitTarget(slot, oppSlotName, 'destroy', card);
+      }
+      break;
+    }
+
+    case 'return': {
+      if (action.target === 'selected_opponent_servant') {
+        if (!isMyEffect) break;
+        await awaitTarget(slot, oppSlotName, 'return', card);
+      } else if (action.target === 'self') {
+        pgs.field = pgs.field.filter(s => s.cardId !== card.id);
+        pgs.hand.push(card.id);
+        showEffectToast(`${card.name}: Returned to hand!`);
+      }
+      break;
+    }
+
+    case 'banish': {
+      if (action.target === 'selected_opponent_servant') {
+        if (!isMyEffect) break;
+        await awaitTarget(slot, oppSlotName, 'banish', card);
+      }
+      break;
+    }
+
+    case 'negate': {
+      negateNext = true;
+      showEffectToast(`${card.name}: Next effect/attack negated!`, 3000);
+      break;
+    }
+
+    case 'search': {
+      if (!isMyEffect) break;
+      const filterType = action.filter?.card_type || action.filter?.element;
+      const filterKey = action.filter?.card_type ? 'card_type' : 'element';
+      const matches = pgs.deck
+        .map((cid,i)=>({cid,i,card:getCard(cid)}))
+        .filter(({card:c2})=> c2 && c2[filterKey]===filterType);
+      if (matches.length === 0) { showEffectToast(`${card.name}: No matching cards in deck!`); break; }
+      showSearchModal(matches, slot, card.name);
+      break;
+    }
+
+    case 'change_position': {
+      if (action.target === 'selected_opponent_servant') {
+        if (!isMyEffect) break;
+        await awaitTarget(slot, oppSlotName, 'change_position:'+action.position, card);
+      }
+      break;
+    }
+
+    case 'direct_orb': {
+      const activeOrbs = oppS.orbs.map((v,i)=>({v,i})).filter(o=>o.v);
+      if (activeOrbs.length > 0) {
+        // corrupt a random orb
+        const target = activeOrbs[Math.floor(Math.random()*activeOrbs.length)];
+        oppS.orbs[target.i] = false;
+        const orbCard = target.i < oppS.orbs.length ? oppS.orbs[target.i] : null;
+        showEffectToast(`${card.name}: Direct orb damage! Orb ${target.i+1} corrupted!`);
+        checkOrbs(oppS);
+      }
+      break;
+    }
+
+    case 'copy_effect': {
+      // Copy the effect_data of a target servant
+      showEffectToast(`${card.name}: Copying effect… (select a servant)`, 2500);
+      // For now mark as special handling needed
+      break;
+    }
+
+    case 'special': {
+      showEffectToast(`${card.name}: ${action.description || 'Special effect activated!'}`, 3500);
+      break;
+    }
+  }
+}
+
+// ── Target selection ──────────────────────────────────────────
+function resolveTargets(targetType, slot, context) {
+  const pgs = gs[slot];
+  if (targetType === 'self' && context.fieldIdx !== undefined) return [pgs.field[context.fieldIdx]];
+  if (targetType === 'all_friendly') return pgs.field;
+  if (targetType === 'selected_friendly' && context.fieldIdx !== undefined) return [pgs.field[context.fieldIdx]];
+  return [];
+}
+
+let _targetResolve = null;
+async function awaitTarget(slot, oppSlotName, action, sourceCard) {
+  return new Promise(resolve => {
+    showEffectToast(`${sourceCard.name}: Select a target on the opponent's field!`, 5000);
+    pendingTargetCallback = (targetFieldIdx) => {
+      const oppS = gs[oppSlotName];
+      const pgs = gs[slot];
+      const target = oppS.field[targetFieldIdx];
+      if (!target) { resolve(); return; }
+      const targetCard = getCard(target.cardId);
+
+      if (action === 'destroy') {
+        oppS.graveyard.push(target.cardId);
+        oppS.field.splice(targetFieldIdx, 1);
+        showEffectToast(`${sourceCard.name}: ${targetCard?.name} destroyed!`);
+      } else if (action === 'return') {
+        oppS.hand.push(target.cardId);
+        oppS.field.splice(targetFieldIdx, 1);
+        showEffectToast(`${sourceCard.name}: ${targetCard?.name} returned to hand!`);
+      } else if (action === 'banish') {
+        oppS.field.splice(targetFieldIdx, 1);
+        showEffectToast(`${sourceCard.name}: ${targetCard?.name} banished!`);
+      } else if (action.startsWith('change_position:')) {
+        const pos = action.split(':')[1];
+        target.position = pos;
+        showEffectToast(`${sourceCard.name}: ${targetCard?.name} moved to ${pos} position!`);
+      }
+      pendingTargetCallback = null;
+      resolve();
+    };
+    // Highlight opponent field as targets
+    renderGame();
+  });
+}
+
+// ── Search modal ──────────────────────────────────────────────
+function showSearchModal(matches, slot, cardName) {
+  const modal = document.getElementById('search-modal');
+  const list = document.getElementById('search-modal-list');
+  document.getElementById('search-modal-title').textContent = `${cardName}: Search Deck`;
+  list.innerHTML = matches.map(({cid,i,card:c2})=>`
+    <div onclick="pickSearchCard(${i},'${slot}')" style="width:72px;cursor:pointer;border:1px solid var(--border2);border-radius:2px;background:var(--surface);transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+      ${c2?.image_url?`<img src="${c2.image_url}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:2px 2px 0 0;display:block;">`:`<div style="width:100%;aspect-ratio:3/4;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:.5rem;color:var(--dim);">?</div>`}
+      <div style="padding:2px 4px;font-family:'Cinzel',serif;font-size:.4rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c2?.name||'?'}</div>
+    </div>
+  `).join('');
+  openModal('search-modal');
+}
+
+function pickSearchCard(deckIdx, slot) {
+  const pgs = gs[slot];
+  const [picked] = pgs.deck.splice(deckIdx, 1);
+  pgs.hand.push(picked);
+  pgs.deck = shuffleArray(pgs.deck); // reshuffle rest
+  closeModal('search-modal');
+  showEffectToast(`Added ${getCard(picked)?.name||'card'} to hand! Deck reshuffled.`);
+  saveGs();
+  renderGame();
+}
+
+function shuffleArray(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function showEffectToast(msg, dur=2800) { showToast(msg, dur); }
+
+// Check if opponent field click should resolve a pending target
+function handleEffectTargetClick(fieldIdx) {
+  if (pendingTargetCallback) {
+    pendingTargetCallback(fieldIdx);
+    return true;
+  }
+  return false;
+}
+
+// ── ATK/DEF with boosts ───────────────────────────────────────
+function getEffectiveAtk(slot, fieldIdx) {
+  const s = gs[slot].field[fieldIdx];
+  const card = getCard(s.cardId);
+  return (card?.atk||0) + (s.atkBoost||0);
+}
+function getEffectiveDef(slot, fieldIdx) {
+  const s = gs[slot].field[fieldIdx];
+  const card = getCard(s.cardId);
+  return (card?.def||0) + (s.defBoost||0);
+}
+
+// ── Continuous effect polling (run every render) ───────────────
+function applyContinuousEffects() {
+  for (const slot of ['player1','player2']) {
+    const pgs = gs[slot];
+    for (let i = 0; i < pgs.field.length; i++) {
+      const s = pgs.field[i];
+      const card = getCard(s.cardId);
+      if (!card?.effect_data?.effects) continue;
+      for (const eff of card.effect_data.effects) {
+        if (eff.trigger !== 'continuous') continue;
+        if (!checkCondition(eff.condition, slot)) continue;
+        // Apply continuous boosts
+        for (const action of eff.actions) {
+          if (action.type === 'boost' && action.target === 'self') {
+            s.continuousAtk = action.atk || 0;
+            s.continuousDef = action.def || 0;
+          }
+          if (action.type === 'buff_element') {
+            for (const s2 of pgs.field) {
+              if (getCard(s2.cardId)?.element === action.element) {
+                s2.continuousAtk = (s2.continuousAtk||0) + (action.atk||0);
+                s2.continuousDef = (s2.continuousDef||0) + (action.def||0);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 init();
 </script>
