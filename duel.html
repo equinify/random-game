@@ -231,8 +231,26 @@
 <div id="topbar">
   <a class="back-btn" href="index.html">← Back</a>
   <div id="topbar-center">Caster Chronicles</div>
-  <div id="phase-pill">—</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span id="topbar-username" style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.1em;color:var(--grey);"></span>
+    <button id="topbar-signin-btn" onclick="openAuthModal()" style="display:none;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.1em;padding:4px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#aaa;cursor:pointer;">Sign In</button>
+    <button id="topbar-signout-btn" onclick="doSignOut()" style="display:none;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.1em;padding:4px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#666;cursor:pointer;">Sign Out</button>
+    <div id="phase-pill">—</div>
+  </div>
 </div>
+<!-- Auth Modal -->
+<div id="auth-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:#111;border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:30px;width:320px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-family:'Cinzel Decorative',serif;font-size:.9rem;color:#f0f0f0;text-align:center;" id="auth-modal-title">Sign In</div>
+    <input id="auth-email" type="email" placeholder="Email" style="background:#0a0a0a;border:1px solid rgba(255,255,255,.1);border-radius:2px;padding:10px;color:#f0f0f0;font-family:'Cinzel',serif;font-size:.7rem;outline:none;"/>
+    <input id="auth-password" type="password" placeholder="Password" style="background:#0a0a0a;border:1px solid rgba(255,255,255,.1);border-radius:2px;padding:10px;color:#f0f0f0;font-family:'Cinzel',serif;font-size:.7rem;outline:none;"/>
+    <div id="auth-modal-err" style="font-family:'Cinzel',serif;font-size:.58rem;color:#e53935;min-height:14px;"></div>
+    <button onclick="submitAuth()" style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;padding:10px;border-radius:2px;border:1px solid rgba(245,197,24,.3);background:rgba(245,197,24,.08);color:#f5c518;cursor:pointer;text-transform:uppercase;">Sign In</button>
+    <div style="text-align:center;font-family:'Cinzel',serif;font-size:.54rem;color:#555;cursor:pointer;" onclick="toggleAuthMode()" id="auth-switch-link">Don't have an account? Register</div>
+    <button onclick="closeAuthModal()" style="background:none;border:none;color:#444;font-size:.6rem;cursor:pointer;font-family:'Cinzel',serif;">Cancel</button>
+  </div>
+</div>
+
 
 <!-- LOBBY -->
 <div class="screen active" id="lobby-screen">
@@ -824,7 +842,12 @@ function renderGame() {
   document.getElementById('opp-deck-num').textContent = o.deck.length;
   document.getElementById('my-gy-num').textContent  = m.graveyard.length;
   document.getElementById('opp-gy-num').textContent = o.graveyard.length;
-  if (myProfile) document.getElementById('my-name').textContent=myProfile.username;
+  if (myProfile) {
+    document.getElementById('my-name').textContent=myProfile.username;
+    document.getElementById('topbar-username').textContent=myProfile.username;
+    document.getElementById('topbar-signin-btn').style.display='none';
+    document.getElementById('topbar-signout-btn').style.display='';
+  }
   // Opponent hand face-down
   const oppHandEl = document.getElementById('opp-hand-row');
   oppHandEl.innerHTML = oppGs().hand.map(()=>`<div class="opp-hand-card"></div>`).join('');
@@ -1685,6 +1708,39 @@ function applyContinuousEffects() {
   }
 }
 
+
+// ── AUTH MODAL ────────────────────────────────────────────────
+let _authMode = 'signin';
+function openAuthModal() {
+  _authMode = 'signin';
+  document.getElementById('auth-modal-title').textContent = 'Sign In';
+  document.getElementById('auth-switch-link').textContent = "Don't have an account? Register";
+  document.getElementById('auth-modal-err').textContent = '';
+  document.getElementById('auth-modal').style.display = 'flex';
+}
+function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+function toggleAuthMode() {
+  _authMode = _authMode === 'signin' ? 'register' : 'signin';
+  document.getElementById('auth-modal-title').textContent = _authMode === 'signin' ? 'Sign In' : 'Register';
+  document.getElementById('auth-switch-link').textContent = _authMode === 'signin' ? "Don't have an account? Register" : 'Already have an account? Sign In';
+  document.getElementById('auth-modal-err').textContent = '';
+}
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-password').value;
+  const err   = document.getElementById('auth-modal-err');
+  if (!email || !pass) { err.textContent = 'Email and password required.'; return; }
+  const result = _authMode === 'signin'
+    ? await sb.auth.signInWithPassword({ email, password: pass })
+    : await sb.auth.signUp({ email, password: pass });
+  if (result.error) { err.textContent = result.error.message; return; }
+  closeAuthModal();
+}
+
+async function doSignOut() {
+  await sb.auth.signOut();
+  location.href = 'index.html';
+}
 init();
 </script>
 </body>
