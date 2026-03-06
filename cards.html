@@ -347,6 +347,7 @@
   <div id="topbar-user">
     <span id="topbar-username"></span>
     <span class="role-badge" id="topbar-badge" style="display:none"></span>
+    <button id="toggle-add-btn" onclick="toggleAddForm()" style="display:none;font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(245,197,24,.3);background:rgba(245,197,24,.06);color:#f5c518;cursor:pointer;">✏️ Add Card</button>
   </div>
 </div>
 
@@ -562,6 +563,14 @@ const RARITY_ORDER = ['common','uncommon','rare','super rare','ultra rare','secr
 let currentUser = null, currentProfile = null, allCards = [], currentCard = null;
 function myRole() { return currentProfile?.role || null; }
 function can(list) { return list.includes(myRole()); }
+function toggleAddForm() {
+  const sec = document.getElementById('add-card-section');
+  const btn = document.getElementById('toggle-add-btn');
+  const visible = sec.style.display !== 'none';
+  sec.style.display = visible ? 'none' : '';
+  btn.textContent = visible ? '✏️ Add Card' : '✕ Close Form';
+  if (!visible) sec.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 // Toast
 let toastTimer;
@@ -586,6 +595,17 @@ async function init() {
   await loadCards();
 }
 
+// Re-check permissions when auth state fires (handles slow session restore)
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; updateAuthUI(); return; }
+  if (session?.user && (!currentProfile || currentProfile.id !== session.user.id)) {
+    currentUser = session.user;
+    const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    currentProfile = data;
+    updateAuthUI();
+  }
+});
+
 function updateAuthUI() {
   const uname = document.getElementById('topbar-username');
   const badge = document.getElementById('topbar-badge');
@@ -596,7 +616,9 @@ function updateAuthUI() {
     badge.textContent = ROLE_LABELS[role] || role;
     badge.className = `role-badge role-${role}`;
     badge.style.display = '';
-    addSection.style.display = can(CAN_ADD) ? '' : 'none';
+    addSection.style.display = 'none'; // hidden by default, toggled by button
+    const toggleBtn = document.getElementById('toggle-add-btn');
+    if (toggleBtn) toggleBtn.style.display = can(CAN_ADD) ? '' : 'none';
   } else {
     uname.textContent = 'Guest';
     badge.style.display = 'none';
