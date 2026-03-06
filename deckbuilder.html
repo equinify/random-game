@@ -71,21 +71,40 @@
     .mini-select { background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:5px 8px; color:var(--white); font-family:'Crimson Pro',serif; font-size:.8rem; outline:none; cursor:pointer; flex:1; min-width:80px; }
     .mini-select option { background:#111; }
 
-    .browser-card { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border2); border-radius:2px; cursor:pointer; transition:all .2s; }
-    .browser-card:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.04); }
-    .browser-card-img { width:36px; height:48px; background:var(--surface2); border-radius:1px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:.5rem; color:var(--grey-dim); }
+    /* card grid browser */
+    #card-browser { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; align-content:start; flex-direction:unset !important; }
+    .browser-card { background:var(--surface); border:1px solid var(--border2); border-radius:3px; overflow:hidden; cursor:pointer; transition:border-color .2s,transform .15s; display:flex; flex-direction:column; position:relative; }
+    .browser-card:hover { border-color:rgba(255,255,255,.25); transform:translateY(-2px); }
+    .browser-card.deck-maxed { border-color:rgba(229,57,53,.3); }
+    .browser-card-img { width:100%; aspect-ratio:3/4; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--grey-dim); font-size:.65rem; font-family:'Cinzel',serif; overflow:hidden; position:relative; }
     .browser-card-img img { width:100%; height:100%; object-fit:cover; }
-    .browser-card-info { flex:1; min-width:0; }
-    .browser-card-name { font-family:'Cinzel',serif; font-size:.66rem; letter-spacing:.06em; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .browser-card-meta { font-size:.6rem; color:var(--grey); margin-top:2px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .qty-badge { position:absolute; top:5px; right:5px; background:rgba(0,0,0,.75); border:1px solid var(--border); border-radius:2px; font-family:'Cinzel',serif; font-size:.52rem; color:var(--white); padding:1px 5px; }
+    .qty-badge.full { color:var(--red); border-color:rgba(229,57,53,.4); }
+    .browser-card-body { padding:7px 8px 8px; display:flex; flex-direction:column; gap:3px; }
+    .browser-card-name { font-family:'Cinzel',serif; font-size:.63rem; letter-spacing:.04em; color:var(--white); line-height:1.3; }
+    .browser-card-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; }
+    .tag { font-family:'Cinzel',serif; font-size:.42rem; letter-spacing:.08em; text-transform:uppercase; padding:1px 4px; border-radius:1px; border:1px solid; }
     .el-pip { display:inline-block; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
     .el-solis{background:var(--solis);} .el-ignus{background:var(--ignus);} .el-silva{background:var(--silva);}
     .el-terra{background:var(--terra);} .el-luna{background:var(--luna);}  .el-aqua{background:var(--aqua);}
     .el-aes{background:var(--aes);}   .el-void{background:var(--void);}
-    .add-btn { font-family:'Cinzel',serif; font-size:.55rem; letter-spacing:.1em; padding:4px 10px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; white-space:nowrap; flex-shrink:0; }
-    .add-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.07); }
-    .add-btn:disabled { opacity:.3; cursor:not-allowed; }
-    .add-btn.maxed { color:var(--red); border-color:rgba(229,57,53,.3); }
+    .tag-el-solis{color:var(--solis);border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.07);}
+    .tag-el-ignus{color:var(--ignus);border-color:rgba(255,87,34,.3);background:rgba(255,87,34,.07);}
+    .tag-el-silva{color:var(--silva);border-color:rgba(102,187,106,.3);background:rgba(102,187,106,.07);}
+    .tag-el-terra{color:var(--terra);border-color:rgba(161,136,127,.3);background:rgba(161,136,127,.07);}
+    .tag-el-luna{color:var(--luna);border-color:rgba(206,147,216,.3);background:rgba(206,147,216,.07);}
+    .tag-el-aqua{color:var(--aqua);border-color:rgba(79,195,247,.3);background:rgba(79,195,247,.07);}
+    .tag-el-aes{color:var(--aes);border-color:rgba(144,164,174,.3);background:rgba(144,164,174,.07);}
+    .tag-el-void{color:var(--void);border-color:rgba(97,97,97,.3);background:rgba(97,97,97,.07);}
+    .tag-type{color:var(--grey);border-color:var(--border2);background:transparent;}
+    .rar-common{color:#9e9e9e;} .rar-uncommon{color:#66bb6a;} .rar-rare{color:#42a5f5;}
+    .rar-super-rare{color:#ab47bc;} .rar-ultra-rare{color:#ffa726;} .rar-secret-rare{color:#ef5350;}
+    .rar-hyper-rare{color:#f5c518;} .rar-repack{color:#78909c;} .rar-promo{color:#26c6da;}
+    .browser-card-rarity { font-family:'Cinzel',serif; font-size:.42rem; letter-spacing:.1em; text-transform:uppercase; margin-top:2px; }
+    .browser-add-btn { width:100%; margin-top:4px; padding:5px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:2px; color:var(--grey); font-family:'Cinzel',serif; font-size:.52rem; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .browser-add-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.09); }
+    .browser-add-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .browser-add-btn.maxed { color:var(--red); border-color:rgba(229,57,53,.3); background:rgba(229,57,53,.05); }
     .in-deck-count { font-family:'Cinzel',serif; font-size:.55rem; color:var(--grey-dim); min-width:16px; text-align:center; flex-shrink:0; }
 
     /* RIGHT — DECK VIEW */
@@ -325,10 +344,12 @@ function getDeckTotal() {
   return Object.values(map).reduce((a,b) => a+b, 0);
 }
 
+function rarityClass(r) { return 'rar-' + (r||'').replace(/ /g,'-'); }
+
 function renderBrowser(cards) {
   const el = document.getElementById('card-browser');
   if (cards.length === 0) {
-    el.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:20px;">No cards found</div>`;
+    el.innerHTML = `<div style="grid-column:1/-1;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:20px;">No cards found</div>`;
     return;
   }
   const map = getDeckCardMap();
@@ -337,27 +358,26 @@ function renderBrowser(cards) {
     const qty = map[c.id] || 0;
     const canAdd = selectedDeckId && total < DECK_SIZE && qty < MAX_COPIES;
     const maxed = qty >= MAX_COPIES;
-    return `<div class="browser-card">
+    const title = !selectedDeckId ? 'Select a deck first' : maxed ? 'Max 4 copies' : total >= DECK_SIZE ? 'Deck is full' : 'Add to deck';
+    return `<div class="browser-card${maxed?' deck-maxed':''}">
       <div class="browser-card-img">
-        ${c.image_url ? `<img src="${escHtml(c.image_url)}" onerror="this.parentElement.textContent='?'"/>` : '?'}
+        ${c.image_url ? `<img src="${escHtml(c.image_url)}" onerror="this.parentElement.innerHTML='No Image'"/>` : 'No Image'}
+        ${qty > 0 ? `<div class="qty-badge${maxed?' full':''}">×${qty}</div>` : ''}
       </div>
-      <div class="browser-card-info">
+      <div class="browser-card-body">
         <div class="browser-card-name">${escHtml(c.name)}</div>
-        <div class="browser-card-meta">
-          <span class="el-pip el-${c.element}"></span>
-          <span>${c.element}</span>
-          <span>·</span>
-          <span>${c.card_type}</span>
-          ${c.atk !== null ? `<span>· ATK ${c.atk}</span>` : ''}
+        <div class="browser-card-tags">
+          <span class="tag tag-el-${c.element}">${c.element}</span>
+          <span class="tag tag-type">${c.card_type}</span>
         </div>
+        <div class="browser-card-rarity ${rarityClass(c.rarity)}">${c.rarity}</div>
+        <button class="browser-add-btn${maxed?' maxed':''}"
+          onclick="addCardToDeck(${c.id})"
+          ${!canAdd ? 'disabled' : ''}
+          title="${title}">
+          ${maxed ? 'Max Copies' : total >= DECK_SIZE ? 'Deck Full' : !selectedDeckId ? 'Select Deck' : '+ Add'}
+        </button>
       </div>
-      <span class="in-deck-count">${qty > 0 ? `×${qty}` : ''}</span>
-      <button class="add-btn ${maxed?'maxed':''}"
-        onclick="addCardToDeck(${c.id})"
-        ${!canAdd ? 'disabled' : ''}
-        title="${!selectedDeckId?'Select a deck first':maxed?'Max 4 copies':total>=DECK_SIZE?'Deck is full':'Add to deck'}">
-        ${maxed ? '×4' : '+'}
-      </button>
     </div>`;
   }).join('');
 }
