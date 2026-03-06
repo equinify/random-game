@@ -69,6 +69,7 @@
     #topbar-user {
       font-family: 'Cinzel', serif; font-size: .58rem; letter-spacing: .12em;
       color: var(--grey); display: flex; align-items: center; gap: 8px;
+      margin-left: auto;
     }
     .role-badge { font-size:.55rem; font-family:'Cinzel',serif; letter-spacing:.08em; padding:2px 7px; border-radius:2px; font-weight:700; text-transform:uppercase; border:1px solid; }
     .role-creator   { color:#f5c518; border-color:rgba(245,197,24,.3);  background:rgba(245,197,24,.08); }
@@ -618,12 +619,15 @@ function showToast(msg) {
 async function init() {
   try {
     const { data:{ session } } = await sb.auth.getSession();
+    console.log('[init] session:', session?.user?.email || 'none');
     if (session?.user) {
       currentUser = session.user;
-      const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      const { data, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      console.log('[init] profile:', data, 'error:', error);
       currentProfile = data;
     }
-  } catch(e) { console.error('init:', e); }
+  } catch(e) { console.error('[init] error:', e); }
+  console.log('[init] currentProfile:', currentProfile?.role);
   updateAuthUI();
   await loadCards();
 }
