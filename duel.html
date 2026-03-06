@@ -519,12 +519,16 @@ function subscribeRoom(id) {
     .subscribe();
 
   // Polling fallback every 2 seconds
+  let _lastStatus = null;
+  let _lastGs = null;
   _pollInterval = setInterval(async () => {
     const { data } = await sb.from('duels').select('*').eq('id', id).single();
     if (!data) return;
-    console.log('[Poll] status:', data.status, 'updated_at:', data.updated_at, 'last:', _lastUpdated);
-    if (data.updated_at !== _lastUpdated) {
-      _lastUpdated = data.updated_at;
+    const gsStr = JSON.stringify(data.game_state);
+    console.log('[Poll] status:', data.status, '| lastStatus:', _lastStatus);
+    if (data.status !== _lastStatus || gsStr !== _lastGs) {
+      _lastStatus = data.status;
+      _lastGs = gsStr;
       handleRoomUpdate(data);
     }
   }, 2000);
