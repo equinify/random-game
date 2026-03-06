@@ -57,6 +57,8 @@
     .card-name{font-family:'Cinzel',serif;font-size:.7rem;color:var(--white)}
     .card-meta{color:var(--grey);font-size:.65rem}
     .card-rarity{font-size:.6rem;color:var(--grey);margin-top:auto}
+    .edit-card-btn{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.1em;padding:6px 10px;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);border-radius:2px;color:#f5c518;cursor:pointer;margin-top:8px;transition:all .2s;width:100%;text-transform:uppercase}
+    .edit-card-btn:hover{background:rgba(245,197,24,.2);border-color:rgba(245,197,24,.5)}
     #empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--grey-dim);font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;display:none}
     
     .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);overflow-y:auto;padding:40px 20px}
@@ -183,6 +185,7 @@
       </div>
       
       <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
+      <button class="reset-btn" id="sidebar-add-btn" style="display:none;margin-top:8px;border-color:rgba(245,197,24,.3);color:#f5c518" onclick="openAddModal()">✏️ Add Card</button>
     </div>
   </div>
 
@@ -298,6 +301,7 @@ function updateUI() {
   const un = document.getElementById('username');
   const rb = document.getElementById('role-badge');
   const ab = document.getElementById('add-btn');
+  const sab = document.getElementById('sidebar-add-btn');
   const ei = document.getElementById('edit-btn');
   const info = document.getElementById('topbar-info');
   const signout = document.getElementById('signout-btn');
@@ -311,11 +315,14 @@ function updateUI() {
     signout.style.display = '';
     if(['creator','admin','card_editor'].includes(profile.role)) {
       ei.style.display = '';
+      sab.style.display = '';
     }
   } else if(user) {
     un.textContent = user.email;
     info.style.display = 'flex';
     signout.style.display = '';
+  } else {
+    info.style.display = 'none';
   }
 }
 
@@ -410,6 +417,7 @@ function render(cards) {
         <div class="card-name">${c.name}</div>
         <div class="card-meta">${c.element} • ${c['card type']}</div>
         <div class="card-rarity">${c.rarity}</div>
+        ${(profile && ['creator','admin','card_editor'].includes(profile.role)) ? `<button class="edit-card-btn" onclick="event.stopPropagation(); openDetailModal(${allCards.indexOf(c)}); setTimeout(()=>openEditModal(), 300)">✏️ Edit</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -519,7 +527,36 @@ function saveCard() {
   }, 300);
 }
 
-async function signOut() {
+async function saveCardToGitHub() {
+  try {
+    const content = JSON.stringify(allCards, null, 2);
+    const blob = new Blob([content], {type: 'application/json'});
+    const text = await blob.text();
+    const encoded = btoa(unescape(encodeURIComponent(text)));
+    
+    const response = await fetch('https://api.github.com/repos/equinify/random-game/contents/cardimage.json', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${user ? 'ghp_YOUR_TOKEN_HERE' : ''}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Updated cards by ${profile?.username || 'unknown'}`,
+        content: encoded,
+        branch: 'main'
+      })
+    });
+    
+    if(!response.ok) {
+      console.error('Failed to save to GitHub:', response.statusText);
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('GitHub save error:', e);
+    return false;
+  }
+}
   await sb.auth.signOut();
   user = profile = null;
   updateUI();
