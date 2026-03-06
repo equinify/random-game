@@ -400,7 +400,8 @@ async function loadSession() {
 sb.auth.onAuthStateChange(async (event, session) => {
   try {
     if (session?.user) await fetchProfile(session.user);
-    else { currentUser = null; currentProfile = null; }
+    else if (event === 'SIGNED_OUT') { currentUser = null; currentProfile = null; }
+    // ignore null session on INITIAL_SESSION — loadSession handles it
   } catch(e) { console.error('authStateChange:', e); }
   updateUI();
   refreshStats();
