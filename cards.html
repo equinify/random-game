@@ -317,9 +317,12 @@ async function signOut(){
 
 async function loadCards(){
   try {
-    const { data, error } = await sb.from('cards').select('*');
-    if (error) throw new Error(error.message);
+    console.log('[loadCards] Fetching from GitHub...');
+    const response = await fetch('https://raw.githubusercontent.com/equinify/random-game/main/cardimage.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
     allCards = data || [];
+    console.log('[loadCards] Loaded', allCards.length, 'cards');
     applyFilters();
   } catch(e) {
     console.error('[loadCards] Error:', e.message);
