@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deck Builder — Caster Chronicles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #080808;
+      --surface: #111;
+      --surface2:#181818;
+      --border:  rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.06);
+      --white:   #f0f0f0;
+      --grey:    #888;
+      --grey-dim:#444;
+      --red:     #e53935;
+      --green:   #4caf50;
+      --gold:    #f5c518;
+      --solis:#f5c518; --ignus:#ff5722; --silva:#66bb6a; --terra:#a1887f;
+      --luna:#ce93d8; --aqua:#4fc3f7; --aes:#90a4ae; --void:#616161;
+    }
+    html, body { min-height:100%; background:var(--bg); color:var(--white); font-family:'Crimson Pro',serif; overflow:hidden; }
+
+    /* TOPBAR */
+    #topbar { position:sticky; top:0; z-index:50; background:rgba(8,8,8,0.95); border-bottom:1px solid var(--border2); backdrop-filter:blur(8px); display:flex; align-items:center; gap:16px; padding:12px 24px; height:49px; }
+    .back-btn { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); text-decoration:none; border:1px solid var(--border); border-radius:2px; padding:5px 12px; transition:color .2s,border-color .2s; white-space:nowrap; }
+    .back-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
+    .topbar-title { font-family:'Cinzel Decorative',serif; font-size:.9rem; color:var(--white); flex:1; text-align:center; }
+    #topbar-user { font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.12em; color:var(--grey); display:flex; align-items:center; gap:8px; white-space:nowrap; }
+
+    /* THREE COLUMN LAYOUT */
+    #page { display:grid; grid-template-columns:220px 1fr 280px; height:calc(100vh - 49px); overflow:hidden; }
+
+    /* PANEL BASE */
+    .panel { display:flex; flex-direction:column; overflow:hidden; }
+    .panel-header { padding:14px 16px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; }
+    .panel-title { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.22em; text-transform:uppercase; color:var(--grey-dim); }
+    .panel-body { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+    .panel-body::-webkit-scrollbar { width:3px; }
+    .panel-body::-webkit-scrollbar-thumb { background:var(--grey-dim); border-radius:2px; }
+
+    /* LEFT — DECKS */
+    #decks-panel { border-right:1px solid var(--border2); }
+    .new-deck-btn { width:100%; padding:8px; background:rgba(255,255,255,.05); border:1px dashed var(--border); border-radius:2px; color:var(--grey); font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .new-deck-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.08); }
+    .deck-item { padding:10px 12px; border:1px solid var(--border2); border-radius:2px; cursor:pointer; transition:all .2s; position:relative; }
+    .deck-item:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.04); }
+    .deck-item.active-deck { border-color:rgba(245,197,24,.4); background:rgba(245,197,24,.05); }
+    .deck-name { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.08em; color:var(--white); display:flex; align-items:center; gap:6px; }
+    .deck-name .star { color:var(--gold); font-size:.7rem; }
+    .deck-count { font-size:.62rem; color:var(--grey); margin-top:3px; }
+    .deck-count .over { color:var(--red); }
+    .deck-count .ready { color:var(--green); }
+    .deck-actions { display:flex; gap:4px; margin-top:6px; }
+    .deck-action-btn { font-family:'Cinzel',serif; font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; padding:3px 8px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; }
+    .deck-action-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
+    .deck-action-btn.fav { color:var(--gold); border-color:rgba(245,197,24,.3); }
+    .deck-action-btn.del:hover { color:var(--red); border-color:rgba(229,57,53,.4); }
+
+    /* MIDDLE — CARD BROWSER */
+    #browser-panel { border-right:1px solid var(--border2); }
+    .search-row { display:flex; gap:6px; margin-bottom:8px; }
+    #card-search { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:7px 10px; color:var(--white); font-family:'Crimson Pro',serif; font-size:.88rem; outline:none; }
+    #card-search:focus { border-color:rgba(255,255,255,.3); }
+    #card-search::placeholder { color:var(--grey-dim); }
+    .filter-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+    .mini-select { background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:5px 8px; color:var(--white); font-family:'Crimson Pro',serif; font-size:.8rem; outline:none; cursor:pointer; flex:1; min-width:80px; }
+    .mini-select option { background:#111; }
+
+    .browser-card { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border2); border-radius:2px; cursor:pointer; transition:all .2s; }
+    .browser-card:hover { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.04); }
+    .browser-card-img { width:36px; height:48px; background:var(--surface2); border-radius:1px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:.5rem; color:var(--grey-dim); }
+    .browser-card-img img { width:100%; height:100%; object-fit:cover; }
+    .browser-card-info { flex:1; min-width:0; }
+    .browser-card-name { font-family:'Cinzel',serif; font-size:.66rem; letter-spacing:.06em; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .browser-card-meta { font-size:.6rem; color:var(--grey); margin-top:2px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .el-pip { display:inline-block; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .el-solis{background:var(--solis);} .el-ignus{background:var(--ignus);} .el-silva{background:var(--silva);}
+    .el-terra{background:var(--terra);} .el-luna{background:var(--luna);}  .el-aqua{background:var(--aqua);}
+    .el-aes{background:var(--aes);}   .el-void{background:var(--void);}
+    .add-btn { font-family:'Cinzel',serif; font-size:.55rem; letter-spacing:.1em; padding:4px 10px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; white-space:nowrap; flex-shrink:0; }
+    .add-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.07); }
+    .add-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .add-btn.maxed { color:var(--red); border-color:rgba(229,57,53,.3); }
+    .in-deck-count { font-family:'Cinzel',serif; font-size:.55rem; color:var(--grey-dim); min-width:16px; text-align:center; flex-shrink:0; }
+
+    /* RIGHT — DECK VIEW */
+    #deck-panel { }
+    #deck-panel-header { padding:14px 16px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; }
+    #deck-panel-name { font-family:'Cinzel Decorative',serif; font-size:.85rem; color:var(--white); margin-bottom:4px; }
+    #deck-progress-bar { height:3px; background:var(--surface2); border-radius:2px; margin-top:8px; overflow:hidden; }
+    #deck-progress-fill { height:100%; border-radius:2px; transition:width .3s, background .3s; }
+    #deck-progress-label { font-family:'Cinzel',serif; font-size:.52rem; letter-spacing:.14em; color:var(--grey); margin-top:4px; }
+
+    /* element breakdown */
+    #el-breakdown { display:flex; gap:6px; flex-wrap:wrap; padding:10px 16px; border-bottom:1px solid var(--border2); flex-shrink:0; }
+    .el-chip { display:flex; align-items:center; gap:4px; font-family:'Cinzel',serif; font-size:.5rem; letter-spacing:.08em; text-transform:uppercase; color:var(--grey); }
+    .el-chip .count { color:var(--white); }
+
+    #deck-card-list { flex:1; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column; gap:4px; }
+    #deck-card-list::-webkit-scrollbar { width:3px; }
+    #deck-card-list::-webkit-scrollbar-thumb { background:var(--grey-dim); border-radius:2px; }
+
+    .deck-entry { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border2); border-radius:2px; }
+    .deck-entry-name { font-family:'Cinzel',serif; font-size:.63rem; letter-spacing:.05em; color:var(--white); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .deck-entry-el { font-size:.55rem; color:var(--grey); }
+    .qty-ctrl { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    .qty-btn { width:18px; height:18px; background:var(--surface2); border:1px solid var(--border); border-radius:2px; color:var(--white); font-size:.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; line-height:1; }
+    .qty-btn:hover { background:rgba(255,255,255,.12); }
+    .qty-num { font-family:'Cinzel',serif; font-size:.6rem; color:var(--white); min-width:12px; text-align:center; }
+
+    #no-deck-msg { flex:1; display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey-dim); text-align:center; padding:20px; }
+
+    /* MODAL */
+    .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.85); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal-box { background:#111; border:1px solid var(--border); border-radius:3px; padding:30px 34px; width:340px; position:relative; transform:translateY(14px) scale(.97); transition:transform .25s; }
+    .modal-overlay.open .modal-box { transform:translateY(0) scale(1); }
+    .modal-title { font-family:'Cinzel Decorative',serif; font-size:.95rem; color:var(--white); margin-bottom:16px; }
+    .modal-close { position:absolute; top:12px; right:14px; background:none; border:none; cursor:pointer; color:var(--grey-dim); font-size:1rem; transition:color .2s; }
+    .modal-close:hover { color:var(--white); }
+    .modal-field { margin-bottom:12px; }
+    .modal-field label { display:block; font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--grey); margin-bottom:5px; }
+    .modal-field input { width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:2px; padding:9px 12px; color:var(--white); font-family:'Crimson Pro',serif; font-size:.92rem; outline:none; transition:border-color .2s; }
+    .modal-field input:focus { border-color:rgba(255,255,255,.35); }
+    .modal-btn { width:100%; margin-top:4px; padding:10px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.2); border-radius:2px; color:var(--white); font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; transition:background .2s; }
+    .modal-btn:hover { background:rgba(255,255,255,.13); }
+    .modal-err { margin-top:8px; font-size:.7rem; color:var(--red); text-align:center; min-height:14px; }
+
+    /* TOAST */
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(12px); background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:8px 20px; font-family:'Cinzel',serif; font-size:.64rem; letter-spacing:.14em; color:var(--white); z-index:200; opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* MUST LOGIN */
+    #must-login { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; gap:16px; background:var(--bg); z-index:200; }
+    #must-login.show { display:flex; }
+    #must-login p { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--grey); }
+
+    @media (max-width:900px) {
+      #page { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; overflow-y:auto; height:auto; }
+      #decks-panel, #browser-panel { border-right:none; border-bottom:1px solid var(--border2); max-height:40vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-btn" href="index.html">← Back</a>
+  <div class="topbar-title">Deck Builder</div>
+  <div id="topbar-user">
+    <span id="topbar-username"></span>
+  </div>
+</div>
+
+<div id="must-login">
+  <p>You must be signed in to use the Deck Builder</p>
+  <a class="back-btn" href="index.html">← Go to Home & Sign In</a>
+</div>
+
+<div id="page">
+
+  <!-- LEFT: Decks -->
+  <div class="panel" id="decks-panel">
+    <div class="panel-header">
+      <div class="panel-title">My Decks</div>
+    </div>
+    <div class="panel-body" id="decks-list">
+      <button class="new-deck-btn" onclick="openNewDeckModal()">+ New Deck</button>
+      <div id="decks-loading" style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:16px;">Loading…</div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Card Browser -->
+  <div class="panel" id="browser-panel">
+    <div class="panel-header">
+      <div class="panel-title" style="margin-bottom:8px;">Card Browser</div>
+      <div class="search-row">
+        <input id="card-search" type="text" placeholder="Search cards…" oninput="filterCards()"/>
+      </div>
+      <div class="filter-row">
+        <select class="mini-select" id="f-element" onchange="filterCards()">
+          <option value="">All Elements</option>
+          <option value="solis">Solis</option><option value="ignus">Ignus</option>
+          <option value="silva">Silva</option><option value="terra">Terra</option>
+          <option value="luna">Luna</option><option value="aqua">Aqua</option>
+          <option value="aes">Aes</option><option value="void">Void</option>
+        </select>
+        <select class="mini-select" id="f-type" onchange="filterCards()">
+          <option value="">All Types</option>
+          <option value="barrier">Barrier</option><option value="caster">Caster</option>
+          <option value="conjure">Conjure</option><option value="deity">Deity</option>
+          <option value="servant">Servant</option><option value="soul bond servant">Soul Bond Servant</option>
+        </select>
+        <select class="mini-select" id="f-rarity" onchange="filterCards()">
+          <option value="">All Rarities</option>
+          <option value="common">Common</option><option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option><option value="super rare">Super Rare</option>
+          <option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option>
+          <option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option>
+          <option value="promo">Promo</option>
+        </select>
+      </div>
+    </div>
+    <div class="panel-body" id="card-browser">
+      <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:16px;">Loading cards…</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Current Deck -->
+  <div class="panel" id="deck-panel">
+    <div id="deck-panel-header">
+      <div id="deck-panel-name" style="color:var(--grey-dim);">No Deck Selected</div>
+      <div id="deck-progress-bar"><div id="deck-progress-fill" style="width:0%;background:var(--grey-dim);"></div></div>
+      <div id="deck-progress-label">0 / 50 cards</div>
+    </div>
+    <div id="el-breakdown"></div>
+    <div id="deck-card-list">
+      <div id="no-deck-msg">Select or create a deck to get started</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- New Deck Modal -->
+<div class="modal-overlay" id="new-deck-modal" onclick="closeIfBg(event,'new-deck-modal')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('new-deck-modal')">✕</button>
+    <div class="modal-title">New Deck</div>
+    <div class="modal-field">
+      <label>Deck Name</label>
+      <input id="new-deck-name" type="text" placeholder="My Deck…" maxlength="40"/>
+    </div>
+    <button class="modal-btn" onclick="createDeck()">Create Deck</button>
+    <div class="modal-err" id="new-deck-err"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_dhuEDL-DJP4_mD4PUVIevg_1u_gjA-j';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const DECK_SIZE = 50;
+const MAX_COPIES = 4;
+
+let currentUser = null;
+let allCards = [];       // all cards from DB
+let decks = [];          // user's decks
+let selectedDeckId = null;
+let deckCards = {};      // { deckId: { cardId: quantity } }
+
+// ── Toast ────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── Modals ───────────────────────────────────────────────────
+function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+function closeIfBg(e,id)  { if (e.target===document.getElementById(id)) closeOverlay(id); }
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  try {
+    const { data:{ session } } = await sb.auth.getSession();
+    if (!session?.user) {
+      document.getElementById('must-login').classList.add('show');
+      return;
+    }
+    currentUser = session.user;
+    document.getElementById('topbar-username').textContent = session.user.email;
+
+    // load profile for username
+    const { data: profile } = await sb.from('profiles').select('username').eq('id', session.user.id).single();
+    if (profile) document.getElementById('topbar-username').textContent = profile.username;
+
+    await Promise.all([loadAllCards(), loadDecks()]);
+  } catch(e) {
+    console.error('init:', e);
+  }
+}
+
+// ── Cards ────────────────────────────────────────────────────
+async function loadAllCards() {
+  const { data, error } = await sb.from('cards').select('*').order('name');
+  if (error) { console.error('loadAllCards:', error); return; }
+  allCards = data || [];
+  filterCards();
+}
+
+function filterCards() {
+  const search  = document.getElementById('card-search').value.toLowerCase().trim();
+  const element = document.getElementById('f-element').value;
+  const type    = document.getElementById('f-type').value;
+  const rarity  = document.getElementById('f-rarity').value;
+
+  const filtered = allCards.filter(c => {
+    if (search  && !c.name.toLowerCase().includes(search)) return false;
+    if (element && c.element !== element) return false;
+    if (type    && c.card_type !== type)  return false;
+    if (rarity  && c.rarity !== rarity)   return false;
+    return true;
+  });
+
+  renderBrowser(filtered);
+}
+
+function getDeckCardMap() {
+  if (!selectedDeckId) return {};
+  return deckCards[selectedDeckId] || {};
+}
+
+function getDeckTotal() {
+  const map = getDeckCardMap();
+  return Object.values(map).reduce((a,b) => a+b, 0);
+}
+
+function renderBrowser(cards) {
+  const el = document.getElementById('card-browser');
+  if (cards.length === 0) {
+    el.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:20px;">No cards found</div>`;
+    return;
+  }
+  const map = getDeckCardMap();
+  const total = getDeckTotal();
+  el.innerHTML = cards.map(c => {
+    const qty = map[c.id] || 0;
+    const canAdd = selectedDeckId && total < DECK_SIZE && qty < MAX_COPIES;
+    const maxed = qty >= MAX_COPIES;
+    return `<div class="browser-card">
+      <div class="browser-card-img">
+        ${c.image_url ? `<img src="${escHtml(c.image_url)}" onerror="this.parentElement.textContent='?'"/>` : '?'}
+      </div>
+      <div class="browser-card-info">
+        <div class="browser-card-name">${escHtml(c.name)}</div>
+        <div class="browser-card-meta">
+          <span class="el-pip el-${c.element}"></span>
+          <span>${c.element}</span>
+          <span>·</span>
+          <span>${c.card_type}</span>
+          ${c.atk !== null ? `<span>· ATK ${c.atk}</span>` : ''}
+        </div>
+      </div>
+      <span class="in-deck-count">${qty > 0 ? `×${qty}` : ''}</span>
+      <button class="add-btn ${maxed?'maxed':''}"
+        onclick="addCardToDeck(${c.id})"
+        ${!canAdd ? 'disabled' : ''}
+        title="${!selectedDeckId?'Select a deck first':maxed?'Max 4 copies':total>=DECK_SIZE?'Deck is full':'Add to deck'}">
+        ${maxed ? '×4' : '+'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ── Decks ────────────────────────────────────────────────────
+async function loadDecks() {
+  const { data, error } = await sb.from('decks').select('*').eq('owner_id', currentUser.id).order('created_at');
+  if (error) { console.error('loadDecks:', error); return; }
+  decks = data || [];
+
+  // load deck cards for all decks
+  for (const deck of decks) {
+    await loadDeckCards(deck.id);
+  }
+
+  renderDecks();
+
+  // auto-select active deck or first deck
+  const active = decks.find(d => d.is_active);
+  if (active) selectDeck(active.id);
+  else if (decks.length > 0) selectDeck(decks[0].id);
+}
+
+async function loadDeckCards(deckId) {
+  const { data, error } = await sb.from('deck_cards').select('*').eq('deck_id', deckId);
+  if (error) { console.error('loadDeckCards:', error); return; }
+  const map = {};
+  for (const row of data || []) map[row.card_id] = row.quantity;
+  deckCards[deckId] = map;
+}
+
+function renderDecks() {
+  const list = document.getElementById('decks-list');
+  document.getElementById('decks-loading')?.remove();
+
+  // remove old deck items
+  list.querySelectorAll('.deck-item').forEach(el => el.remove());
+
+  for (const deck of decks) {
+    const map = deckCards[deck.id] || {};
+    const total = Object.values(map).reduce((a,b)=>a+b, 0);
+    const isSelected = deck.id === selectedDeckId;
+    const countClass = total === DECK_SIZE ? 'ready' : total > DECK_SIZE ? 'over' : '';
+    const countLabel = total === DECK_SIZE ? `✓ ${total}/${DECK_SIZE}` : `${total}/${DECK_SIZE}`;
+
+    const div = document.createElement('div');
+    div.className = `deck-item${deck.is_active?' active-deck':''}${isSelected?' selected':''}`;
+    div.style.borderColor = isSelected ? 'rgba(255,255,255,.3)' : '';
+    div.style.background  = isSelected ? 'rgba(255,255,255,.06)' : '';
+    div.innerHTML = `
+      <div class="deck-name">
+        ${deck.is_active ? '<span class="star">★</span>' : ''}
+        ${escHtml(deck.name)}
+      </div>
+      <div class="deck-count"><span class="${countClass}">${countLabel} cards</span></div>
+      <div class="deck-actions">
+        <button class="deck-action-btn${deck.is_active?' fav':''}" onclick="toggleActive(${deck.id})" title="${deck.is_active?'Remove favourite':'Set as active'}">
+          ${deck.is_active ? '★ Active' : '☆ Set Active'}
+        </button>
+        <button class="deck-action-btn del" onclick="deleteDeck(${deck.id})" title="Delete deck">Delete</button>
+      </div>`;
+    div.onclick = (e) => { if (!e.target.closest('button')) selectDeck(deck.id); };
+    list.appendChild(div);
+  }
+
+  // ensure new deck button stays at top
+  const btn = list.querySelector('.new-deck-btn');
+  if (btn) list.insertBefore(btn, list.firstChild);
+}
+
+function selectDeck(deckId) {
+  selectedDeckId = deckId;
+  renderDecks();
+  renderDeckView();
+  filterCards(); // refresh add buttons
+}
+
+function renderDeckView() {
+  const deck = decks.find(d => d.id === selectedDeckId);
+  if (!deck) {
+    document.getElementById('deck-panel-name').textContent = 'No Deck Selected';
+    document.getElementById('deck-panel-name').style.color = 'var(--grey-dim)';
+    document.getElementById('deck-progress-label').textContent = '0 / 50 cards';
+    document.getElementById('deck-progress-fill').style.width = '0%';
+    document.getElementById('el-breakdown').innerHTML = '';
+    document.getElementById('deck-card-list').innerHTML = '<div id="no-deck-msg" style="flex:1;display:flex;align-items:center;justify-content:center;font-family:\'Cinzel\',serif;font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-dim);text-align:center;padding:20px;">Select or create a deck to get started</div>';
+    return;
+  }
+
+  const map = deckCards[selectedDeckId] || {};
+  const total = Object.values(map).reduce((a,b)=>a+b, 0);
+  const pct = Math.min(100, (total/DECK_SIZE)*100);
+  const fillColor = total > DECK_SIZE ? 'var(--red)' : total === DECK_SIZE ? 'var(--green)' : 'var(--white)';
+
+  document.getElementById('deck-panel-name').textContent = deck.name;
+  document.getElementById('deck-panel-name').style.color = 'var(--white)';
+  document.getElementById('deck-progress-fill').style.width = pct + '%';
+  document.getElementById('deck-progress-fill').style.background = fillColor;
+  document.getElementById('deck-progress-label').textContent = `${total} / ${DECK_SIZE} cards${total===DECK_SIZE?' — Ready!':total>DECK_SIZE?' — Too many cards!':''}`;
+
+  // element breakdown
+  const elCounts = {};
+  for (const [cardId, qty] of Object.entries(map)) {
+    const card = allCards.find(c => c.id == cardId);
+    if (card) elCounts[card.element] = (elCounts[card.element]||0) + qty;
+  }
+  const elOrder = ['solis','ignus','silva','terra','luna','aqua','aes','void'];
+  document.getElementById('el-breakdown').innerHTML = elOrder
+    .filter(el => elCounts[el])
+    .map(el => `<div class="el-chip"><span class="el-pip el-${el}"></span><span class="count">${elCounts[el]}</span> ${el}</div>`)
+    .join('');
+
+  // card list
+  const list = document.getElementById('deck-card-list');
+  const entries = Object.entries(map).filter(([,qty]) => qty > 0);
+  if (entries.length === 0) {
+    list.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase;text-align:center;padding:20px;">No cards yet — add from the browser</div>`;
+    return;
+  }
+
+  // sort by name
+  entries.sort(([aId],[bId]) => {
+    const ca = allCards.find(c=>c.id==aId), cb = allCards.find(c=>c.id==bId);
+    return (ca?.name||'').localeCompare(cb?.name||'');
+  });
+
+  list.innerHTML = entries.map(([cardId, qty]) => {
+    const card = allCards.find(c => c.id == cardId);
+    if (!card) return '';
+    return `<div class="deck-entry">
+      <div class="deck-entry-name">${escHtml(card.name)}</div>
+      <div class="deck-entry-el"><span class="el-pip el-${card.element}" style="display:inline-block;"></span></div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="adjustQty(${card.id}, -1)">−</button>
+        <span class="qty-num">×${qty}</span>
+        <button class="qty-btn" onclick="adjustQty(${card.id}, 1)" ${qty>=MAX_COPIES||Object.values(map).reduce((a,b)=>a+b,0)>=DECK_SIZE?'disabled style="opacity:.3;cursor:not-allowed;"':''}>+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Card operations ───────────────────────────────────────────
+async function addCardToDeck(cardId) {
+  if (!selectedDeckId) { showToast('Select a deck first!'); return; }
+  const map = deckCards[selectedDeckId] || {};
+  const total = Object.values(map).reduce((a,b)=>a+b, 0);
+  const qty = map[cardId] || 0;
+
+  if (total >= DECK_SIZE) { showToast(`Deck is full! (${DECK_SIZE} cards max)`); return; }
+  if (qty >= MAX_COPIES)  { showToast(`Max ${MAX_COPIES} copies per card!`); return; }
+
+  // upsert in DB
+  if (qty === 0) {
+    const { error } = await sb.from('deck_cards').insert({ deck_id: selectedDeckId, card_id: cardId, quantity: 1 });
+    if (error) { showToast('Error: ' + error.message); return; }
+  } else {
+    const { error } = await sb.from('deck_cards').update({ quantity: qty+1 }).eq('deck_id', selectedDeckId).eq('card_id', cardId);
+    if (error) { showToast('Error: ' + error.message); return; }
+  }
+
+  if (!deckCards[selectedDeckId]) deckCards[selectedDeckId] = {};
+  deckCards[selectedDeckId][cardId] = qty + 1;
+
+  renderDeckView();
+  renderDecks();
+  filterCards();
+}
+
+async function adjustQty(cardId, delta) {
+  if (!selectedDeckId) return;
+  const map = deckCards[selectedDeckId] || {};
+  const qty = map[cardId] || 0;
+  const total = Object.values(map).reduce((a,b)=>a+b,0);
+  const newQty = qty + delta;
+
+  if (newQty > MAX_COPIES) { showToast(`Max ${MAX_COPIES} copies per card!`); return; }
+  if (newQty > 0 && delta > 0 && total >= DECK_SIZE) { showToast(`Deck is full! (${DECK_SIZE} cards max)`); return; }
+
+  if (newQty <= 0) {
+    const { error } = await sb.from('deck_cards').delete().eq('deck_id', selectedDeckId).eq('card_id', cardId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    delete deckCards[selectedDeckId][cardId];
+  } else {
+    const { error } = await sb.from('deck_cards').update({ quantity: newQty }).eq('deck_id', selectedDeckId).eq('card_id', cardId);
+    if (error) { showToast('Error: ' + error.message); return; }
+    deckCards[selectedDeckId][cardId] = newQty;
+  }
+
+  renderDeckView();
+  renderDecks();
+  filterCards();
+}
+
+// ── Deck management ───────────────────────────────────────────
+function openNewDeckModal() {
+  document.getElementById('new-deck-name').value = '';
+  document.getElementById('new-deck-err').textContent = '';
+  openOverlay('new-deck-modal');
+  setTimeout(() => document.getElementById('new-deck-name').focus(), 100);
+}
+
+async function createDeck() {
+  const name = document.getElementById('new-deck-name').value.trim();
+  const err  = document.getElementById('new-deck-err');
+  err.textContent = '';
+  if (!name) { err.textContent = 'Deck name is required.'; return; }
+  if (name.length > 40) { err.textContent = 'Name too long (max 40 chars).'; return; }
+
+  const { data, error } = await sb.from('decks').insert({ owner_id: currentUser.id, name }).select().single();
+  if (error) { err.textContent = error.message; return; }
+
+  deckCards[data.id] = {};
+  decks.push(data);
+  closeOverlay('new-deck-modal');
+  renderDecks();
+  selectDeck(data.id);
+  showToast(`"${name}" created!`);
+}
+
+async function deleteDeck(deckId) {
+  const deck = decks.find(d => d.id === deckId);
+  if (!deck) return;
+  if (!confirm(`Delete "${deck.name}"? This cannot be undone.`)) return;
+
+  const { error } = await sb.from('decks').delete().eq('id', deckId);
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  decks = decks.filter(d => d.id !== deckId);
+  delete deckCards[deckId];
+
+  if (selectedDeckId === deckId) {
+    selectedDeckId = decks.length > 0 ? decks[0].id : null;
+  }
+
+  renderDecks();
+  renderDeckView();
+  filterCards();
+  showToast(`"${deck.name}" deleted.`);
+}
+
+async function toggleActive(deckId) {
+  const deck = decks.find(d => d.id === deckId);
+  if (!deck) return;
+  const newActive = !deck.is_active;
+
+  // unset all active first
+  if (newActive) {
+    for (const d of decks) {
+      if (d.is_active && d.id !== deckId) {
+        await sb.from('decks').update({ is_active: false }).eq('id', d.id);
+        d.is_active = false;
+      }
+    }
+  }
+
+  const { error } = await sb.from('decks').update({ is_active: newActive }).eq('id', deckId);
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  deck.is_active = newActive;
+  renderDecks();
+  showToast(newActive ? `"${deck.name}" set as active deck!` : `"${deck.name}" deactivated.`);
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOverlay('new-deck-modal');
+  if (e.key === 'Enter' && document.getElementById('new-deck-modal').classList.contains('open')) createDeck();
+});
+
+init();
+</script>
+</body>
+</html>
