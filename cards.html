@@ -606,13 +606,13 @@ async function loadCards(){
     console.log('[loadCards] Loading cards from JSON...');
     
     // Update this URL to your GitHub raw content URL
-    // Format: https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/cards.json
+    // Format: https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/cardimage.json
    const cardsUrl = 'https://raw.githubusercontent.com/equinify/random-game/main/cardimage.json';
     
     const response = await fetch(cardsUrl);
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Could not load cards.json`);
+      throw new Error(`HTTP ${response.status}: Could not load cardimage.json`);
     }
     
     const data = await response.json();
