@@ -315,13 +315,34 @@ async function signOut(){
   updateAuthUI();
 }
 
+const CARD_DATA = [
+  {
+    "id": 1,
+    "name": "Orange Peko Lv1",
+    "element": "solis",
+    "card type": "caster",
+    "rarity": "common",
+    "atk": 100,
+    "def": 50,
+    "aether cost": 2,
+    "race_trait": "Fox Spirit",
+    "artist": "Unknown",
+    "description": "A fox spirit of modest power. Orange Peko is just beginning her magical journey.",
+    "special ability": "When played, gain 1 aether.",
+    "image url": "https://cdn.buylist.ca/Single_Card_Images/watermarked/casterchronicles/the-magic-battle-begins/Orange_Peko_Lv1__The_Magic_Battle_Begins_147241_3514528.webp",
+    "card set": "modern",
+    "has break": false,
+    "break type": null,
+    "added_by": "system",
+    "created at": "2026-03-06",
+    "effect data": null
+  }
+];
+
 async function loadCards(){
   try {
-    console.log('[loadCards] Fetching from GitHub...');
-    const response = await fetch('https://raw.githubusercontent.com/equinify/random-game/main/cardimage.json');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    allCards = data || [];
+    console.log('[loadCards] Loading cards...');
+    allCards = CARD_DATA || [];
     console.log('[loadCards] Loaded', allCards.length, 'cards');
     applyFilters();
   } catch(e) {
