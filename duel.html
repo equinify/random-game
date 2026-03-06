@@ -97,17 +97,17 @@
     .opp-hand-card::after { content:''; position:absolute; inset:3px; border:1px solid rgba(255,255,255,.06); border-radius:1px; }
 
     /* TWO HALVES stacked, each takes equal space */
-    .half-grid { flex:1; display:grid; grid-template-columns:46px 1fr 72px; overflow:hidden; min-height:0; }
+    .half-grid { flex:1; display:grid; grid-template-columns:62px 1fr 90px; overflow:hidden; min-height:0; }
     .half-center { display:flex; flex-direction:column; overflow:hidden; min-height:0; }
 
     /* FIELD DIVIDER */
     .field-divider-line { height:2px; background:linear-gradient(to right, transparent, var(--border), transparent); flex-shrink:0; }
 
     /* ORB ZONE — vertical strip of 7 mini cards */
-    .orb-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px 3px; background:rgba(0,0,0,.25); overflow:hidden; }
-    .orb-zone.opp { border-right:1px solid var(--border2); }
+    .orb-zone { display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; gap:0; padding:4px 5px; background:rgba(0,0,0,.25); overflow:hidden; }
+    .orb-zone.opp { border-right:1px solid var(--border2); transform:scaleY(-1); }
     .orb-zone.mine { border-right:1px solid var(--border2); }
-    .orb-card { width:34px; height:46px; border-radius:2px; border:1px solid rgba(245,197,24,.35); background:linear-gradient(135deg,#12122a,#1c1c3e); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; overflow:hidden; }
+    .orb-card { width:50px; height:calc((100% - 36px) / 7); min-height:30px; border-radius:3px; border:1px solid rgba(245,197,24,.4); background:linear-gradient(135deg,#12122a,#1c1c3e); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; overflow:hidden; }
     .orb-card::after { content:''; position:absolute; inset:4px; border:1px solid rgba(245,197,24,.15); border-radius:50%; }
     .orb-card.corrupt { background:#1a1a1a; border-color:rgba(255,255,255,.06); opacity:.4; }
     .orb-card.corrupt::after { display:none; }
@@ -137,19 +137,25 @@
 
     /* SERVANT ZONES */
     .servant-zone { flex:1; position:relative; overflow:hidden; min-height:0; background:rgba(255,255,255,.012); }
+    #opp-servant-zone { transform:scaleY(-1); }
+    #opp-servant-zone .servant-zone-label { transform:translate(-50%,-50%) scaleY(-1); }
+    #opp-servant-zone .s-card { transform:scaleY(-1); }
+    #opp-servant-zone .s-card.defense { transform:scaleY(-1) rotate(90deg); }
+    #opp-servant-zone .s-card.attacker-sel { transform:scaleY(-1); border-color:var(--red); box-shadow:0 0 14px rgba(229,57,53,.6); }
+    #opp-servant-zone .s-card.valid-target { transform:scaleY(-1); }
     .servant-zone-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Cinzel',serif; font-size:.5rem; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.18); pointer-events:none; white-space:nowrap; }
 
     /* DECK + GY */
-    .right-col { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 3px; border-left:1px solid var(--border2); gap:4px; }
+    .right-col { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 4px; border-left:1px solid var(--border2); gap:6px; }
     .right-col.opp { border-bottom:none; }
-    .deck-pile { width:52px; height:68px; border-radius:2px; border:1px solid rgba(255,255,255,.15); background:linear-gradient(135deg,#12122a,#1c1c3e); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:all .2s; }
+    .deck-pile { width:72px; height:90px; border-radius:3px; border:1px solid rgba(255,255,255,.15); background:linear-gradient(135deg,#12122a,#1c1c3e); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .2s; }
     .deck-pile:hover { border-color:rgba(255,255,255,.3); }
-    .deck-pile-label { font-family:'Cinzel',serif; font-size:.38rem; letter-spacing:.1em; color:rgba(255,255,255,.35); text-transform:uppercase; }
-    .deck-pile-count { font-family:'Cinzel Decorative',serif; font-size:.82rem; color:rgba(255,255,255,.7); }
-    .gy-pile { width:52px; height:68px; border-radius:2px; border:1px solid var(--border2); background:var(--s2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:all .2s; }
+    .deck-pile-label { font-family:'Cinzel',serif; font-size:.45rem; letter-spacing:.1em; color:rgba(255,255,255,.4); text-transform:uppercase; }
+    .deck-pile-count { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:rgba(255,255,255,.8); }
+    .gy-pile { width:72px; height:90px; border-radius:3px; border:1px solid var(--border2); background:var(--s2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .2s; }
     .gy-pile:hover { border-color:rgba(255,255,255,.2); }
-    .gy-label { font-family:'Cinzel',serif; font-size:.38rem; letter-spacing:.1em; color:#666; text-transform:uppercase; }
-    .gy-count { font-family:'Cinzel',serif; font-size:.82rem; color:#666; }
+    .gy-label { font-family:'Cinzel',serif; font-size:.45rem; letter-spacing:.1em; color:#777; text-transform:uppercase; }
+    .gy-count { font-family:'Cinzel',serif; font-size:1.1rem; color:#777; }
 
     /* SERVANT CARDS ON FIELD */
     .s-card { position:absolute; width:56px; cursor:pointer; border-radius:2px; border:1px solid rgba(255,255,255,.2); background:var(--surface); transition:border-color .2s, box-shadow .2s; box-shadow:0 2px 6px rgba(0,0,0,.5); }
