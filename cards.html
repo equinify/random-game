@@ -585,7 +585,13 @@ const RARITY_ORDER = ['common','uncommon','rare','super rare','ultra rare','secr
 let currentUser = null, currentProfile = null, allCards = [], currentCard = null;
 function myRole() { return currentProfile?.role || null; }
 function can(list) { return list.includes(myRole()); }
-function toggleAddForm() {
+async function toggleAddForm() {
+  // If profile not loaded yet, fetch it now
+  if (!currentProfile && currentUser) {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = data;
+    updateAuthUI();
+  }
   console.log('[toggleAddForm] role:', myRole(), '| profile:', currentProfile);
   if (!can(CAN_ADD)) {
     alert(`Your role (${myRole()||'unknown'}) does not have permission to add cards.\nRequired: creator, admin, or card_editor.`);
@@ -653,7 +659,7 @@ function updateAuthUI() {
     badge.style.display = '';
     if(signoutBtn) signoutBtn.style.display = '';
     addSection.style.display = 'none';
-    if (toggleBtn) toggleBtn.style.display = can(CAN_ADD) ? '' : 'none';
+    if (toggleBtn) toggleBtn.style.display = currentUser ? '' : 'none';
   } else {
     uname.textContent = '';
     badge.style.display  = 'none';
