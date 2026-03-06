@@ -3,338 +3,510 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Caster Chronicles</title>
+  <title>Card Database — Caster Chronicles</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black:   #0a0a0a;
-      --white:   #f5f5f5;
+      --bg:      #080808;
+      --surface: #111;
+      --surface2:#181818;
+      --border:  rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.06);
+      --white:   #f0f0f0;
       --grey:    #888;
-      --grey-dim:#333;
-      --border:  rgba(255,255,255,0.12);
-      --panel:   rgba(255,255,255,0.04);
-      --green:   #4caf50;
+      --grey-dim:#444;
       --red:     #e53935;
+      --green:   #4caf50;
 
-      --creator-color:  #f5c518;
-      --admin-color:    #e53935;
-      --editor-color:   #90caf9;
-      --mod-color:      #80cbc4;
-      --supporter-color:#b0bec5;
-      --player-color:   #555;
+      /* Element colours */
+      --solis:  #f5c518;
+      --ignus:  #ff5722;
+      --silva:  #66bb6a;
+      --terra:  #a1887f;
+      --luna:   #ce93d8;
+      --aqua:   #4fc3f7;
+      --aes:    #90a4ae;
+      --void:   #616161;
+
+      /* Rarity colours */
+      --common:       #9e9e9e;
+      --uncommon:     #66bb6a;
+      --rare:         #42a5f5;
+      --super-rare:   #ab47bc;
+      --ultra-rare:   #ffa726;
+      --secret-rare:  #ef5350;
+      --hyper-rare:   #f5c518;
+      --repack:       #78909c;
+      --promo:        #26c6da;
     }
 
-    html, body { height:100%; background:var(--black); color:var(--white); font-family:'Crimson Pro',serif; overflow:hidden; }
+    html, body { min-height:100%; background:var(--bg); color:var(--white); font-family:'Crimson Pro',serif; }
+
+    /* ── TOP NAV ── */
+    #topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(8,8,8,0.95);
+      border-bottom: 1px solid var(--border2);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 16px;
+      padding: 12px 24px;
+    }
+    .back-btn {
+      font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--grey); text-decoration: none;
+      border: 1px solid var(--border); border-radius: 2px; padding: 5px 12px;
+      transition: color .2s, border-color .2s;
+    }
+    .back-btn:hover { color: var(--white); border-color: rgba(255,255,255,.3); }
+    .topbar-title {
+      font-family: 'Cinzel Decorative', serif; font-size: .9rem;
+      color: var(--white); flex: 1; text-align: center;
+    }
+    #topbar-user {
+      font-family: 'Cinzel', serif; font-size: .58rem; letter-spacing: .12em;
+      color: var(--grey); display: flex; align-items: center; gap: 8px;
+    }
+    .role-badge { font-size:.55rem; font-family:'Cinzel',serif; letter-spacing:.08em; padding:2px 7px; border-radius:2px; font-weight:700; text-transform:uppercase; border:1px solid; }
+    .role-creator   { color:#f5c518; border-color:rgba(245,197,24,.3);  background:rgba(245,197,24,.08); }
+    .role-admin     { color:#e53935; border-color:rgba(229,57,53,.3);   background:rgba(229,57,53,.08); }
+    .role-card_editor{ color:#90caf9;border-color:rgba(144,202,249,.3); background:rgba(144,202,249,.08); }
+    .role-moderator { color:#80cbc4; border-color:rgba(128,203,196,.3); background:rgba(128,203,196,.08); }
+    .role-supporter { color:#b0bec5; border-color:rgba(176,190,197,.3); background:rgba(176,190,197,.08); }
+    .role-player    { color:#888;    border-color:rgba(100,100,100,.3); background:rgba(100,100,100,.08); }
 
     /* ── LAYOUT ── */
-    #app { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:10; }
+    #page { display: flex; min-height: calc(100vh - 49px); }
 
-    /* ── HEADER ── */
-    #header { text-align:center; margin-bottom:8px; animation:fadeDown 1s ease both; }
-    .logo-eyebrow { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.48em; text-transform:uppercase; color:var(--grey); margin-bottom:10px; }
-    .logo-title { font-family:'Cinzel Decorative',serif; font-size:clamp(2rem,5vw,3.8rem); font-weight:900; line-height:1; color:var(--white); }
-    .logo-sub { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.5em; color:var(--grey); margin-top:10px; text-transform:uppercase; }
-
-    /* ── STATS ── */
-    #stats-bar {
-      display:flex; align-items:stretch;
-      margin:16px auto 0;
-      border:1px solid var(--border);
-      border-radius:2px;
-      background:var(--panel);
-      overflow:hidden;
-      animation:fadeIn 1.4s ease both .4s;
-      width:fit-content;
+    /* ── SIDEBAR (filters + add card) ── */
+    #sidebar {
+      width: 260px; flex-shrink: 0;
+      border-right: 1px solid var(--border2);
+      padding: 20px 18px;
+      display: flex; flex-direction: column; gap: 20px;
+      position: sticky; top: 49px; height: calc(100vh - 49px); overflow-y: auto;
     }
-    .stat-item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 28px; gap:3px; }
-    .stat-item+.stat-item { border-left:1px solid var(--border); }
-    .stat-value { font-family:'Cinzel Decorative',serif; font-size:1.2rem; color:var(--white); line-height:1; }
-    .stat-value.pulse { animation:statPulse .4s ease; }
-    @keyframes statPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2);color:#fff} }
-    .stat-label { font-family:'Cinzel',serif; font-size:.5rem; letter-spacing:.22em; text-transform:uppercase; color:var(--grey); }
+    .sidebar-section-title {
+      font-family: 'Cinzel', serif; font-size: .58rem; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--grey-dim); margin-bottom: 10px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border2);
+    }
 
-    /* ── DIVIDER ── */
-    .divider { display:flex; align-items:center; gap:12px; width:320px; margin:18px auto; animation:fadeIn 1.2s ease both .3s; }
-    .divider-line { flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--grey-dim),transparent); }
-    .divider-gem { width:5px; height:5px; background:var(--grey); transform:rotate(45deg); }
+    /* search */
+    #search-input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 2px; padding: 8px 12px; color: var(--white);
+      font-family: 'Crimson Pro', serif; font-size: .9rem; outline: none;
+      transition: border-color .2s;
+    }
+    #search-input:focus { border-color: rgba(255,255,255,.3); }
+    #search-input::placeholder { color: var(--grey-dim); }
 
-    /* ── NAV ── */
-    #nav { display:flex; flex-direction:column; gap:6px; width:310px; animation:fadeUp 1s ease both .25s; }
-    .nav-btn { position:relative; display:flex; align-items:center; gap:14px; padding:12px 18px; background:var(--panel); border:1px solid var(--border); border-radius:2px; cursor:pointer; color:inherit; transition:border-color .2s,background .2s,transform .15s; overflow:hidden; outline:none; text-decoration:none; }
-    .nav-btn:hover { border-color:rgba(255,255,255,0.3); background:rgba(255,255,255,0.07); transform:translateX(3px); }
-    .nav-btn:active { transform:translateX(1px) scale(.99); }
-    .btn-icon { font-size:1.1rem; width:22px; text-align:center; flex-shrink:0; opacity:.7; transition:opacity .2s; }
-    .nav-btn:hover .btn-icon { opacity:1; }
-    .btn-text { display:flex; flex-direction:column; }
-    .btn-label { font-family:'Cinzel',serif; font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--white); }
-    .btn-desc { font-size:.68rem; color:var(--grey); margin-top:2px; }
-    .btn-arrow { margin-left:auto; color:var(--grey-dim); font-size:.85rem; opacity:0; transition:opacity .2s,transform .2s; }
-    .nav-btn:hover .btn-arrow { opacity:1; transform:translateX(3px); }
-    .nav-btn.primary { border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.07); }
-    .nav-btn.primary .btn-label { color:var(--white); }
+    /* filter groups */
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-label {
+      font-family: 'Cinzel', serif; font-size: .56rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--grey); margin-bottom: 2px;
+    }
+    .filter-select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 2px; padding: 7px 10px; color: var(--white);
+      font-family: 'Crimson Pro', serif; font-size: .88rem; outline: none;
+      transition: border-color .2s; cursor: pointer;
+    }
+    .filter-select:focus { border-color: rgba(255,255,255,.3); }
+    .filter-select option { background: #111; }
 
-    /* ── TOP BAR ── */
-    #auth-bar { position:fixed; top:16px; left:20px; z-index:20; display:flex; align-items:center; gap:8px; }
-    .auth-btn { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); background:transparent; border:1px solid var(--border); padding:5px 13px; border-radius:2px; cursor:pointer; transition:color .2s,border-color .2s; }
-    .auth-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
-    .auth-sep { color:var(--grey-dim); }
-    #version { position:fixed; top:16px; right:20px; font-family:'Cinzel',serif; font-size:.55rem; letter-spacing:.2em; color:var(--grey-dim); border:1px solid var(--border); padding:4px 10px; border-radius:2px; }
+    .reset-btn {
+      width: 100%; padding: 8px; background: transparent; border: 1px solid var(--border);
+      border-radius: 2px; color: var(--grey); font-family: 'Cinzel', serif;
+      font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+      cursor: pointer; transition: color .2s, border-color .2s;
+    }
+    .reset-btn:hover { color: var(--white); border-color: rgba(255,255,255,.3); }
 
-    /* ── USER PILL ── */
-    #user-pill { display:none; align-items:center; gap:8px; border:1px solid var(--border); border-radius:2px; padding:5px 13px; background:var(--panel); }
-    #user-pill.visible { display:flex; }
-    .user-name { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.12em; color:var(--white); }
-    .role-badge { font-size:.55rem; font-family:'Cinzel',serif; letter-spacing:.08em; padding:2px 7px; border-radius:2px; font-weight:700; text-transform:uppercase; border:1px solid; }
-    .role-creator   { color:var(--creator-color);  border-color:rgba(245,197,24,.3);  background:rgba(245,197,24,.08); }
-    .role-admin     { color:var(--admin-color);    border-color:rgba(229,57,53,.3);   background:rgba(229,57,53,.08); }
-    .role-card_editor{ color:var(--editor-color);  border-color:rgba(144,202,249,.3); background:rgba(144,202,249,.08); }
-    .role-moderator { color:var(--mod-color);      border-color:rgba(128,203,196,.3); background:rgba(128,203,196,.08); }
-    .role-supporter { color:var(--supporter-color);border-color:rgba(176,190,197,.3); background:rgba(176,190,197,.08); }
-    .role-player    { color:var(--grey);           border-color:rgba(100,100,100,.3); background:rgba(100,100,100,.08); }
-    .sign-out-btn { background:none; border:none; cursor:pointer; color:var(--grey-dim); font-size:.75rem; transition:color .2s; }
-    .sign-out-btn:hover { color:var(--red); }
+    /* add card form */
+    #add-card-form { display: none; flex-direction: column; gap: 10px; }
+    #add-card-form.visible { display: flex; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label {
+      font-family: 'Cinzel', serif; font-size: .55rem; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--grey);
+    }
+    .field input, .field select, .field textarea {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 2px;
+      padding: 7px 10px; color: var(--white); font-family: 'Crimson Pro', serif;
+      font-size: .88rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: rgba(255,255,255,.3); }
+    .field select option { background: #111; }
+    .field textarea { resize: vertical; min-height: 60px; }
+    .field input[type="number"] { -moz-appearance: textfield; }
+    .field input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
 
-    /* ── MODAL ── */
-    .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.85); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
-    .modal-overlay.open { opacity:1; pointer-events:all; }
-    .modal-box { background:#111; border:1px solid var(--border); border-radius:3px; padding:34px 38px; width:370px; position:relative; transform:translateY(16px) scale(.97); transition:transform .25s ease; max-height:90vh; overflow-y:auto; }
-    .modal-overlay.open .modal-box { transform:translateY(0) scale(1); }
-    .modal-title { font-family:'Cinzel Decorative',serif; font-size:1rem; color:var(--white); margin-bottom:5px; }
-    .modal-sub { font-size:.74rem; color:var(--grey-dim); margin-bottom:20px; }
-    .modal-close { position:absolute; top:14px; right:16px; background:none; border:none; cursor:pointer; color:var(--grey-dim); font-size:1rem; transition:color .2s; }
-    .modal-close:hover { color:var(--white); }
-    .field { margin-bottom:12px; }
-    .field label { display:block; font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--grey); margin-bottom:5px; }
-    .field input,.field select,.field textarea { width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:2px; padding:9px 12px; color:var(--white); font-family:'Crimson Pro',serif; font-size:.92rem; outline:none; transition:border-color .2s; }
-    .field select option { background:#111; }
-    .field textarea { resize:vertical; min-height:75px; }
-    .field input:focus,.field select:focus,.field textarea:focus { border-color:rgba(255,255,255,.35); }
-    .modal-btn { width:100%; margin-top:6px; padding:11px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.2); border-radius:2px; color:var(--white); font-family:'Cinzel',serif; font-size:.67rem; letter-spacing:.22em; text-transform:uppercase; cursor:pointer; transition:background .2s,border-color .2s; }
-    .modal-btn:hover { background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.4); }
-    .modal-btn:disabled { opacity:.35; cursor:not-allowed; }
-    .modal-switch { text-align:center; margin-top:14px; font-size:.72rem; color:var(--grey-dim); }
-    .modal-switch a { color:var(--grey); cursor:pointer; text-decoration:underline; }
-    .modal-switch a:hover { color:var(--white); }
-    .modal-err { margin-top:8px; font-size:.72rem; color:var(--red); text-align:center; min-height:16px; }
-    .modal-ok  { margin-top:8px; font-size:.72rem; color:var(--green); text-align:center; min-height:16px; }
-    .divider-sm { height:1px; background:var(--border); margin:16px 0; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-    /* ── CARDS LIST ── */
-    .card-row { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--border); }
-    .card-row:last-child { border-bottom:none; }
-    .card-row-name { font-family:'Cinzel',serif; font-size:.66rem; letter-spacing:.06em; color:var(--white); }
-    .card-row-meta { font-size:.62rem; color:var(--grey); margin-top:2px; }
-    .icon-btn { background:none; border:none; cursor:pointer; color:var(--grey-dim); font-size:.78rem; transition:color .2s; padding:2px 5px; }
-    .icon-btn.del:hover { color:var(--red); }
+    .submit-btn {
+      padding: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.2);
+      border-radius: 2px; color: var(--white); font-family: 'Cinzel', serif;
+      font-size: .64rem; letter-spacing: .2em; text-transform: uppercase;
+      cursor: pointer; transition: background .2s; margin-top: 2px;
+    }
+    .submit-btn:hover { background: rgba(255,255,255,.14); }
+    .submit-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .form-err { font-size: .7rem; color: var(--red); text-align: center; min-height: 14px; }
+    .form-ok  { font-size: .7rem; color: var(--green); text-align: center; min-height: 14px; }
 
-    /* ── ADMIN ── */
-    .user-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--border); }
-    .user-row:last-child { border-bottom:none; }
-    .user-row-name { font-family:'Cinzel',serif; font-size:.65rem; color:var(--white); flex:1; }
-    .user-row select { background:#111; border:1px solid var(--border); border-radius:2px; padding:4px 8px; color:var(--white); font-family:'Cinzel',serif; font-size:.58rem; outline:none; }
-    .user-row button { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.1em; padding:4px 11px; background:rgba(255,255,255,.07); border:1px solid var(--border); border-radius:2px; color:var(--white); cursor:pointer; transition:background .2s; }
-    .user-row button:hover { background:rgba(255,255,255,.15); }
+    /* ── MAIN AREA ── */
+    #main { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
 
-    /* ── ANNOUNCEMENT ── */
-    #announcement-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:#111; border-bottom:1px solid var(--border); padding:10px 60px 10px 20px; }
-    #announcement-banner.visible { display:block; }
-    .ann-title { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.16em; color:var(--creator-color); text-transform:uppercase; }
-    .ann-body { font-size:.8rem; color:var(--white); margin-top:3px; }
-    #ann-close { position:absolute; top:10px; right:16px; background:none; border:none; cursor:pointer; color:var(--grey); font-size:1rem; }
+    /* stats row */
+    #card-count-bar {
+      font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--grey);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    #sort-row { display: flex; align-items: center; gap: 8px; }
+    .sort-select {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 2px;
+      padding: 5px 10px; color: var(--white); font-family: 'Cinzel', serif;
+      font-size: .58rem; letter-spacing: .1em; outline: none; cursor: pointer;
+    }
+    .sort-select option { background: #111; }
 
-    /* ── TOAST ── */
-    #toast { position:fixed; bottom:44px; left:50%; transform:translateX(-50%) translateY(16px); background:#111; border:1px solid var(--border); border-radius:2px; padding:9px 22px; font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.14em; color:var(--white); z-index:200; opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; }
-    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    /* card grid */
+    #card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      overflow-y: auto;
+      max-height: calc(100vh - 140px);
+      padding-bottom: 20px;
+    }
+    #card-grid::-webkit-scrollbar { width: 4px; }
+    #card-grid::-webkit-scrollbar-thumb { background: var(--grey-dim); border-radius: 2px; }
 
-    /* ── FOOTER ── */
-    #footer { position:fixed; bottom:16px; width:100%; text-align:center; font-size:.58rem; letter-spacing:.22em; color:var(--grey-dim); text-transform:uppercase; }
+    /* card tile */
+    .card-tile {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 3px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .2s, transform .15s;
+      display: flex; flex-direction: column;
+      animation: tileIn .3s ease both;
+    }
+    @keyframes tileIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .card-tile:hover { border-color: rgba(255,255,255,.25); transform: translateY(-2px); }
 
-    /* ── ANIMATIONS ── */
-    @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
-    @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+    .card-image {
+      width: 100%; aspect-ratio: 3/4; object-fit: cover;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--grey-dim); font-size: .7rem; font-family: 'Cinzel', serif;
+      letter-spacing: .1em; text-align: center;
+    }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .card-image.no-img { padding: 20px; }
 
-    .modal-box::-webkit-scrollbar { width:3px; }
-    .modal-box::-webkit-scrollbar-thumb { background:var(--grey-dim); border-radius:2px; }
+    .card-body { padding: 10px 10px 8px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .card-name {
+      font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: .06em;
+      color: var(--white); line-height: 1.3;
+    }
+    .card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+    .card-type-badge {
+      font-family: 'Cinzel', serif; font-size: .48rem; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--grey); border: 1px solid var(--border2);
+      padding: 1px 5px; border-radius: 1px;
+    }
+    .card-element {
+      font-family: 'Cinzel', serif; font-size: .48rem; letter-spacing: .08em;
+      text-transform: uppercase; padding: 1px 5px; border-radius: 1px;
+      border: 1px solid; font-weight: 700;
+    }
+    .el-solis  { color:var(--solis);  border-color:rgba(245,197,24,.3);  background:rgba(245,197,24,.08); }
+    .el-ignus  { color:var(--ignus);  border-color:rgba(255,87,34,.3);   background:rgba(255,87,34,.08); }
+    .el-silva  { color:var(--silva);  border-color:rgba(102,187,106,.3); background:rgba(102,187,106,.08); }
+    .el-terra  { color:var(--terra);  border-color:rgba(161,136,127,.3); background:rgba(161,136,127,.08); }
+    .el-luna   { color:var(--luna);   border-color:rgba(206,147,216,.3); background:rgba(206,147,216,.08); }
+    .el-aqua   { color:var(--aqua);   border-color:rgba(79,195,247,.3);  background:rgba(79,195,247,.08); }
+    .el-aes    { color:var(--aes);    border-color:rgba(144,164,174,.3); background:rgba(144,164,174,.08); }
+    .el-void   { color:var(--void);   border-color:rgba(97,97,97,.3);    background:rgba(97,97,97,.08); }
 
-    @media (max-width:480px) {
-      #nav { width:90vw; } .modal-box { width:90vw; padding:24px 18px; }
+    .card-rarity {
+      font-family: 'Cinzel', serif; font-size: .46rem; letter-spacing: .1em;
+      text-transform: uppercase; margin-top: auto; padding-top: 6px;
+    }
+    .rar-common       { color: var(--common); }
+    .rar-uncommon     { color: var(--uncommon); }
+    .rar-rare         { color: var(--rare); }
+    .rar-super-rare   { color: var(--super-rare); }
+    .rar-ultra-rare   { color: var(--ultra-rare); }
+    .rar-secret-rare  { color: var(--secret-rare); }
+    .rar-hyper-rare   { color: var(--hyper-rare); }
+    .rar-repack       { color: var(--repack); }
+    .rar-promo        { color: var(--promo); }
+
+    .card-stats { display: flex; gap: 8px; font-family: 'Cinzel', serif; font-size: .52rem; color: var(--grey); margin-top: 4px; }
+    .card-stat span { color: var(--white); }
+
+    /* empty / loading states */
+    #empty-state {
+      grid-column: 1/-1; text-align: center; padding: 60px 20px;
+      color: var(--grey-dim); font-family: 'Cinzel', serif;
+      font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    }
+
+    /* ── CARD DETAIL MODAL ── */
+    #detail-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.88); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    #detail-overlay.open { opacity: 1; pointer-events: all; }
+    #detail-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 3px; width: 600px; max-width: 95vw; max-height: 90vh;
+      overflow-y: auto; position: relative;
+      transform: translateY(16px) scale(.97);
+      transition: transform .25s ease;
+      display: flex;
+    }
+    #detail-overlay.open #detail-box { transform: translateY(0) scale(1); }
+    #detail-box::-webkit-scrollbar { width: 3px; }
+    #detail-box::-webkit-scrollbar-thumb { background: var(--grey-dim); border-radius: 2px; }
+
+    #detail-img {
+      width: 200px; flex-shrink: 0;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--grey-dim); font-size: .65rem; font-family: 'Cinzel', serif;
+      text-align: center; padding: 10px;
+    }
+    #detail-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    #detail-content { flex: 1; padding: 24px 22px; display: flex; flex-direction: column; gap: 12px; }
+    #detail-close {
+      position: absolute; top: 12px; right: 14px;
+      background: none; border: none; cursor: pointer;
+      color: var(--grey-dim); font-size: 1rem; transition: color .2s;
+    }
+    #detail-close:hover { color: var(--white); }
+
+    .detail-name { font-family: 'Cinzel Decorative', serif; font-size: 1.1rem; color: var(--white); line-height: 1.2; }
+    .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .detail-section-label {
+      font-family: 'Cinzel', serif; font-size: .52rem; letter-spacing: .2em;
+      text-transform: uppercase; color: var(--grey-dim); margin-bottom: 3px;
+    }
+    .detail-text { font-size: .88rem; color: var(--white); line-height: 1.5; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .detail-field { display: flex; flex-direction: column; gap: 2px; }
+    .detail-value { font-family: 'Cinzel', serif; font-size: .68rem; color: var(--white); }
+
+    .detail-del-btn {
+      margin-top: auto; padding: 9px; background: rgba(229,57,53,.08);
+      border: 1px solid rgba(229,57,53,.3); border-radius: 2px;
+      color: var(--red); font-family: 'Cinzel', serif; font-size: .62rem;
+      letter-spacing: .18em; text-transform: uppercase; cursor: pointer;
+      transition: background .2s;
+    }
+    .detail-del-btn:hover { background: rgba(229,57,53,.18); }
+
+    /* toast */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 2px; padding: 8px 20px;
+      font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: .14em;
+      color: var(--white); z-index: 200; opacity: 0;
+      transition: opacity .25s, transform .25s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 700px) {
+      #sidebar { width: 100%; position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border2); }
+      #page { flex-direction: column; }
+      #detail-box { flex-direction: column; }
+      #detail-img { width: 100%; height: 200px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Announcement banner -->
-<div id="announcement-banner">
-  <button id="ann-close" onclick="closeAnnouncement()">✕</button>
-  <div class="ann-title" id="ann-title"></div>
-  <div class="ann-body"  id="ann-body"></div>
-</div>
-
-<!-- Auth bar -->
-<div id="auth-bar">
-  <div id="guest-btns">
-    <button class="auth-btn" onclick="openAuth('login')">Sign In</button>
-    <span class="auth-sep">·</span>
-    <button class="auth-btn" onclick="openAuth('register')">Register</button>
-  </div>
-  <div id="user-pill">
-    <span class="user-name" id="pill-name"></span>
-    <span class="role-badge" id="pill-badge"></span>
-    <button class="sign-out-btn" onclick="signOut()" title="Sign out">⏻</button>
+<!-- Top nav -->
+<div id="topbar">
+  <a class="back-btn" href="index.html">← Back</a>
+  <div class="topbar-title">Card Database</div>
+  <div id="topbar-user">
+    <span id="topbar-username"></span>
+    <span class="role-badge" id="topbar-badge" style="display:none"></span>
   </div>
 </div>
 
-<div id="version">Alpha v0.1</div>
+<div id="page">
 
-<!-- Main -->
-<div id="app">
-  <div id="header">
-    <div class="logo-eyebrow">Welcome to</div>
-    <div class="logo-title">Caster Chronicles</div>
-    <div class="logo-sub">Online Card Game</div>
-    <div id="stats-bar">
-      <div class="stat-item"><span class="stat-value" id="stat-cards">—</span><span class="stat-label">Cards</span></div>
-      <div class="stat-item"><span class="stat-value" id="stat-duelists">—</span><span class="stat-label">Duelists</span></div>
-      <div class="stat-item"><span class="stat-value" id="stat-battles">—</span><span class="stat-label">Battles</span></div>
+  <!-- Sidebar -->
+  <div id="sidebar">
+
+    <!-- Search -->
+    <div>
+      <div class="sidebar-section-title">Search</div>
+      <input id="search-input" type="text" placeholder="Search cards…" oninput="applyFilters()"/>
     </div>
-  </div>
 
-  <div class="divider"><div class="divider-line"></div><div class="divider-gem"></div><div class="divider-line"></div></div>
-
-  <nav id="nav">
-    <button class="nav-btn primary" onclick="showToast('Battle Rooms coming soon!')">
-      <span class="btn-icon">⚔️</span>
-      <span class="btn-text"><span class="btn-label">Duel</span><span class="btn-desc">Enter a battle room &amp; challenge opponents</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" onclick="showToast('Deck Builder coming soon!')">
-      <span class="btn-icon">📋</span>
-      <span class="btn-text"><span class="btn-label">Deck Builder</span><span class="btn-desc">Construct and manage your decks</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" onclick="window.location.href='cards.html'">
-      <span class="btn-icon">📖</span>
-      <span class="btn-text"><span class="btn-label">Card Database</span><span class="btn-desc" id="db-desc">View the available cards</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" onclick="showToast('Profile coming soon!')">
-      <span class="btn-icon">👤</span>
-      <span class="btn-text"><span class="btn-label">My Profile</span><span class="btn-desc">Stats, history &amp; achievements</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" id="admin-btn" style="display:none" onclick="openAdminPanel()">
-      <span class="btn-icon">🛡️</span>
-      <span class="btn-text"><span class="btn-label">Admin Panel</span><span class="btn-desc">Manage users &amp; roles</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" id="announce-btn" style="display:none" onclick="openAnnounceModal()">
-      <span class="btn-icon">📣</span>
-      <span class="btn-text"><span class="btn-label">Announcements</span><span class="btn-desc">Post a message to all players</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-    <button class="nav-btn" onclick="showToast('Settings coming soon!')">
-      <span class="btn-icon">⚙️</span>
-      <span class="btn-text"><span class="btn-label">Settings</span><span class="btn-desc">Audio, display &amp; preferences</span></span>
-      <span class="btn-arrow">›</span>
-    </button>
-  </nav>
-</div>
-
-<div id="footer">© Caster Chronicles — All rights reserved</div>
-<div id="toast"></div>
-
-<!-- AUTH MODAL -->
-<div class="modal-overlay" id="auth-overlay" onclick="closeIfBg(event,'auth-overlay')">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('auth-overlay')">✕</button>
-    <div id="view-login">
-      <div class="modal-title">Sign In</div>
-      <div class="modal-sub">Enter the chronicles</div>
-      <div class="field"><label>Email</label><input id="login-email" type="email" placeholder="your@email.com"/></div>
-      <div class="field"><label>Password</label><input id="login-pass" type="password" placeholder="••••••••"/></div>
-      <button class="modal-btn" id="login-btn" onclick="doLogin()">Enter</button>
-      <div class="modal-err" id="login-err"></div>
-      <div class="modal-switch">No account? <a onclick="switchAuth('register')">Register here</a></div>
-    </div>
-    <div id="view-register" style="display:none">
-      <div class="modal-title">Register</div>
-      <div class="modal-sub">Begin your journey</div>
-      <div class="field"><label>Username</label><input id="reg-username" type="text" placeholder="CasterName"/></div>
-      <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="your@email.com"/></div>
-      <div class="field"><label>Password</label><input id="reg-pass" type="password" placeholder="Min 6 characters"/></div>
-      <button class="modal-btn" id="reg-btn" onclick="doRegister()">Create Account</button>
-      <div class="modal-err" id="reg-err"></div>
-      <div class="modal-ok"  id="reg-ok"></div>
-      <div class="modal-switch">Already registered? <a onclick="switchAuth('login')">Sign in</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- CARD DB MODAL -->
-<div class="modal-overlay" id="carddb-overlay" onclick="closeIfBg(event,'carddb-overlay')">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('carddb-overlay')">✕</button>
-    <div class="modal-title">Card Database</div>
-    <div class="modal-sub" id="carddb-sub">Loading…</div>
-    <div id="card-list" style="max-height:220px;overflow-y:auto;margin-bottom:14px;"></div>
-    <div id="add-card-section" style="display:none">
-      <div class="divider-sm"></div>
-      <div class="field"><label>Card Name</label><input id="new-card-name" type="text" placeholder="Card name…"/></div>
-      <div class="field"><label>Description</label><textarea id="new-card-desc" placeholder="Optional description"></textarea></div>
-      <div class="field"><label>Type</label>
-        <select id="new-card-type">
-          <option value="creature">Creature</option>
-          <option value="spell">Spell</option>
-          <option value="trap">Trap</option>
-          <option value="artifact">Artifact</option>
+    <!-- Filters -->
+    <div>
+      <div class="sidebar-section-title">Filters</div>
+      <div class="filter-group">
+        <div class="filter-label">Element</div>
+        <select class="filter-select" id="f-element" onchange="applyFilters()">
+          <option value="">All Elements</option>
+          <option value="solis">Solis</option>
+          <option value="ignus">Ignus</option>
+          <option value="silva">Silva</option>
+          <option value="terra">Terra</option>
+          <option value="luna">Luna</option>
+          <option value="aqua">Aqua</option>
+          <option value="aes">Aes</option>
+          <option value="void">Void</option>
         </select>
-      </div>
-      <div class="field"><label>Rarity</label>
-        <select id="new-card-rarity">
+
+        <div class="filter-label">Type</div>
+        <select class="filter-select" id="f-type" onchange="applyFilters()">
+          <option value="">All Types</option>
+          <option value="barrier">Barrier</option>
+          <option value="caster">Caster</option>
+          <option value="conjure">Conjure</option>
+          <option value="deity">Deity</option>
+          <option value="servant">Servant</option>
+          <option value="soul bond servant">Soul Bond Servant</option>
+        </select>
+
+        <div class="filter-label">Rarity</div>
+        <select class="filter-select" id="f-rarity" onchange="applyFilters()">
+          <option value="">All Rarities</option>
           <option value="common">Common</option>
           <option value="uncommon">Uncommon</option>
           <option value="rare">Rare</option>
-          <option value="legendary">Legendary</option>
+          <option value="super rare">Super Rare</option>
+          <option value="ultra rare">Ultra Rare</option>
+          <option value="secret rare">Secret Rare</option>
+          <option value="hyper rare">Hyper Rare</option>
+          <option value="repack">Repack</option>
+          <option value="promo">Promo</option>
+        </select>
+
+        <div class="filter-label">Max Aether Cost</div>
+        <input class="filter-select" id="f-aether" type="number" min="0" placeholder="Any" oninput="applyFilters()" style="font-family:'Crimson Pro',serif;"/>
+      </div>
+      <button class="reset-btn" style="margin-top:10px" onclick="resetFilters()">Reset Filters</button>
+    </div>
+
+    <!-- Add Card (privileged only) -->
+    <div id="add-card-section" style="display:none">
+      <div class="sidebar-section-title">Add Card</div>
+      <div id="add-card-form" class="visible">
+        <div class="field"><label>Name *</label><input id="c-name" type="text" placeholder="Card name"/></div>
+        <div class="field"><label>Element</label>
+          <select id="c-element">
+            <option value="void">Void</option><option value="solis">Solis</option>
+            <option value="ignus">Ignus</option><option value="silva">Silva</option>
+            <option value="terra">Terra</option><option value="luna">Luna</option>
+            <option value="aqua">Aqua</option><option value="aes">Aes</option>
+          </select>
+        </div>
+        <div class="field"><label>Type</label>
+          <select id="c-type">
+            <option value="caster">Caster</option><option value="barrier">Barrier</option>
+            <option value="conjure">Conjure</option><option value="deity">Deity</option>
+            <option value="servant">Servant</option><option value="soul bond servant">Soul Bond Servant</option>
+          </select>
+        </div>
+        <div class="field"><label>Rarity</label>
+          <select id="c-rarity">
+            <option value="common">Common</option><option value="uncommon">Uncommon</option>
+            <option value="rare">Rare</option><option value="super rare">Super Rare</option>
+            <option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option>
+            <option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option>
+            <option value="promo">Promo</option>
+          </select>
+        </div>
+        <div class="row-2">
+          <div class="field"><label>ATK</label><input id="c-atk" type="number" min="0" placeholder="0"/></div>
+          <div class="field"><label>DEF</label><input id="c-def" type="number" min="0" placeholder="0"/></div>
+        </div>
+        <div class="field"><label>Aether Cost</label><input id="c-aether" type="number" min="0" placeholder="0"/></div>
+        <div class="field"><label>Race / Trait</label><input id="c-race" type="text" placeholder="e.g. Dragon, Mage"/></div>
+        <div class="field"><label>Artist</label><input id="c-artist" type="text" placeholder="Artist name"/></div>
+        <div class="field"><label>Description</label><textarea id="c-desc" placeholder="Card description…"></textarea></div>
+        <div class="field"><label>Special Ability</label><textarea id="c-ability" placeholder="Special ability text…"></textarea></div>
+        <div class="field"><label>Image URL</label><input id="c-img" type="text" placeholder="https://…"/></div>
+        <button class="submit-btn" id="add-btn" onclick="addCard()">+ Add Card</button>
+        <div class="form-err" id="form-err"></div>
+        <div class="form-ok"  id="form-ok"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="card-count-bar">
+      <span id="count-label">Loading…</span>
+      <div id="sort-row">
+        <span style="font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-dim);">Sort</span>
+        <select class="sort-select" id="sort-by" onchange="applyFilters()">
+          <option value="name">Name</option>
+          <option value="rarity">Rarity</option>
+          <option value="element">Element</option>
+          <option value="aether_cost">Aether Cost</option>
+          <option value="atk">ATK</option>
+          <option value="def">DEF</option>
+          <option value="created_at">Date Added</option>
+        </select>
+        <select class="sort-select" id="sort-dir" onchange="applyFilters()">
+          <option value="asc">↑</option>
+          <option value="desc">↓</option>
         </select>
       </div>
-      <button class="modal-btn" onclick="addCard()">+ Add Card</button>
-      <div class="modal-err" id="card-err"></div>
+    </div>
+    <div id="card-grid">
+      <div id="empty-state">Loading cards…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Card detail modal -->
+<div id="detail-overlay" onclick="closeDetail(event)">
+  <div id="detail-box">
+    <div id="detail-img">No Image</div>
+    <div id="detail-content">
+      <button id="detail-close" onclick="closeDetailBtn()">✕</button>
+      <div class="detail-name" id="d-name"></div>
+      <div class="detail-badges" id="d-badges"></div>
+      <div id="d-desc-section">
+        <div class="detail-section-label">Description</div>
+        <div class="detail-text" id="d-desc"></div>
+      </div>
+      <div id="d-ability-section">
+        <div class="detail-section-label">Special Ability</div>
+        <div class="detail-text" id="d-ability"></div>
+      </div>
+      <div class="detail-grid" id="d-grid"></div>
+      <button class="detail-del-btn" id="d-del-btn" style="display:none" onclick="deleteCurrentCard()">Remove Card</button>
     </div>
   </div>
 </div>
 
-<!-- ADMIN PANEL MODAL -->
-<div class="modal-overlay" id="admin-overlay" onclick="closeIfBg(event,'admin-overlay')">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('admin-overlay')">✕</button>
-    <div class="modal-title">Admin Panel</div>
-    <div class="modal-sub">Manage player roles</div>
-    <div id="user-list" style="max-height:360px;overflow-y:auto;"></div>
-    <div class="modal-err" id="admin-err"></div>
-  </div>
-</div>
-
-<!-- ANNOUNCE MODAL -->
-<div class="modal-overlay" id="announce-overlay" onclick="closeIfBg(event,'announce-overlay')">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('announce-overlay')">✕</button>
-    <div class="modal-title">Post Announcement</div>
-    <div class="modal-sub">Visible to all players on load</div>
-    <div class="field"><label>Title</label><input id="ann-title-input" type="text" placeholder="Announcement title…"/></div>
-    <div class="field"><label>Message</label><textarea id="ann-body-input" placeholder="Your message…"></textarea></div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-      <input type="checkbox" id="ann-pinned" style="width:auto;accent-color:#fff;"/>
-      <label for="ann-pinned" style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);cursor:pointer;">Pin this announcement</label>
-    </div>
-    <button class="modal-btn" onclick="postAnnouncement()">📣 Post</button>
-    <div class="modal-err" id="ann-err"></div>
-    <div class="modal-ok"  id="ann-ok"></div>
-  </div>
-</div>
+<div id="toast"></div>
 
 <script>
 const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
@@ -345,12 +517,12 @@ const ROLE_LABELS = {
   creator:'👑 Creator', admin:'🛡 Admin', card_editor:'✏️ Editor',
   moderator:'🔰 Mod', supporter:'💎 Supporter', player:'Player',
 };
-const CAN_ADD_CARDS    = ['creator','admin','card_editor'];
-const CAN_DELETE_CARDS = ['creator','admin','moderator'];
-const CAN_MANAGE_USERS = ['creator','admin'];
-const CAN_ANNOUNCE     = ['creator'];
+const CAN_ADD    = ['creator','admin','card_editor'];
+const CAN_DELETE = ['creator','admin','moderator'];
 
-let currentUser = null, currentProfile = null;
+const RARITY_ORDER = ['common','uncommon','rare','super rare','ultra rare','secret rare','hyper rare','repack','promo'];
+
+let currentUser = null, currentProfile = null, allCards = [], currentCard = null;
 function myRole() { return currentProfile?.role || null; }
 function can(list) { return list.includes(myRole()); }
 
@@ -363,251 +535,261 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-// Modals
-function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
-function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
-function closeIfBg(e,id)  { if (e.target===document.getElementById(id)) closeOverlay(id); }
-
-// Stats
-function animateStat(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
-  setTimeout(()=>el.classList.remove('pulse'),400);
-}
-async function refreshStats() {
-  try {
-    const { data } = await sb.from('public_stats').select('*').single();
-    if (!data) return;
-    document.getElementById('stat-cards').textContent    = data.card_count;
-    document.getElementById('stat-duelists').textContent = data.duelist_count;
-    document.getElementById('stat-battles').textContent  = data.battle_count;
-    document.getElementById('db-desc').textContent = 'View the available cards';
-      `${data.card_count} card${data.card_count!=1?'s':''} in the database`;
-  } catch(e) { console.error('refreshStats:', e); }
-}
-
-// UI
-function updateUI() {
-  const pill   = document.getElementById('user-pill');
-  const guests = document.getElementById('guest-btns');
-  const adminB = document.getElementById('admin-btn');
-  const annB   = document.getElementById('announce-btn');
-  if (currentProfile) {
-    guests.style.display = 'none';
-    pill.classList.add('visible');
-    const role = currentProfile.role;
-    document.getElementById('pill-name').textContent = currentProfile.username;
-    const badge = document.getElementById('pill-badge');
-    badge.textContent = ROLE_LABELS[role] || role;
-    badge.className   = `role-badge role-${role}`;
-    adminB.style.display = can(CAN_MANAGE_USERS) ? '' : 'none';
-    annB.style.display   = can(CAN_ANNOUNCE)     ? '' : 'none';
-  } else {
-    guests.style.display = '';
-    pill.classList.remove('visible');
-    adminB.style.display = 'none';
-    annB.style.display   = 'none';
-  }
-}
-
 // Session
-async function fetchProfile(user) {
+async function init() {
   try {
-    currentUser = user;
-    const fetchPromise   = sb.from('profiles').select('*').eq('id', user.id).single();
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 5000));
-    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-    if (error) { console.error('fetchProfile:', error.message); currentProfile = null; return; }
-    currentProfile = data;
-  } catch(e) { console.error('fetchProfile exception:', e); currentProfile = null; }
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      currentProfile = data;
+    }
+  } catch(e) { console.error('init:', e); }
+  updateAuthUI();
+  await loadCards();
 }
 
-async function loadSession() {
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) await fetchProfile(session.user);
-  } catch(e) { console.error('loadSession:', e); }
-  updateUI();
-}
-
-sb.auth.onAuthStateChange(async (event, session) => {
-  try {
-    if (session?.user) await fetchProfile(session.user);
-    else { currentUser = null; currentProfile = null; }
-  } catch(e) { console.error('authStateChange:', e); }
-  updateUI();
-  refreshStats();
-});
-
-// Auth
-function openAuth(view) { switchAuth(view); openOverlay('auth-overlay'); }
-function switchAuth(view) {
-  document.getElementById('view-login').style.display    = view==='login'    ? '' : 'none';
-  document.getElementById('view-register').style.display = view==='register' ? '' : 'none';
-}
-
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value;
-  const btn   = document.getElementById('login-btn');
-  const err   = document.getElementById('login-err');
-  err.textContent = '';
-  if (!email||!pass) { err.textContent='Please enter your email and password.'; return; }
-  btn.disabled=true; btn.textContent='Entering…';
-  try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) { err.textContent=error.message; return; }
-    closeOverlay('auth-overlay');
-    showToast('Welcome back, Caster.');
-  } catch(e) {
-    err.textContent='Connection error — try again.';
-    console.error(e);
-  } finally {
-    btn.disabled=false; btn.textContent='Enter';
+function updateAuthUI() {
+  const uname = document.getElementById('topbar-username');
+  const badge = document.getElementById('topbar-badge');
+  const addSection = document.getElementById('add-card-section');
+  if (currentProfile) {
+    uname.textContent = currentProfile.username;
+    const role = currentProfile.role;
+    badge.textContent = ROLE_LABELS[role] || role;
+    badge.className = `role-badge role-${role}`;
+    badge.style.display = '';
+    addSection.style.display = can(CAN_ADD) ? '' : 'none';
+  } else {
+    uname.textContent = 'Guest';
+    badge.style.display = 'none';
+    addSection.style.display = 'none';
   }
 }
 
-async function doRegister() {
-  const username = document.getElementById('reg-username').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const pass     = document.getElementById('reg-pass').value;
-  const btn=document.getElementById('reg-btn'), err=document.getElementById('reg-err'), ok=document.getElementById('reg-ok');
-  err.textContent=''; ok.textContent='';
-  if (!username) { err.textContent='Username is required.'; return; }
-  if (username.length<3) { err.textContent='Username must be at least 3 characters.'; return; }
-  btn.disabled=true; btn.textContent='Creating…';
-  try {
-    const { error } = await sb.auth.signUp({ email, password: pass, options:{ data:{ username } } });
-    if (error) { err.textContent=error.message; return; }
-    ok.textContent='Account created! You can now sign in.';
-  } catch(e) { err.textContent='Error — try again.'; }
-  finally { btn.disabled=false; btn.textContent='Create Account'; }
+// Load cards
+async function loadCards() {
+  const { data, error } = await sb.from('cards').select('*');
+  if (error) { document.getElementById('empty-state').textContent = 'Error loading cards.'; return; }
+  allCards = data || [];
+  applyFilters();
 }
 
-async function signOut() {
-  await sb.auth.signOut();
-  showToast('You have left the chronicles.');
+// Filter + sort
+function applyFilters() {
+  const search  = document.getElementById('search-input').value.toLowerCase().trim();
+  const element = document.getElementById('f-element').value;
+  const type    = document.getElementById('f-type').value;
+  const rarity  = document.getElementById('f-rarity').value;
+  const aether  = document.getElementById('f-aether').value;
+  const sortBy  = document.getElementById('sort-by').value;
+  const sortDir = document.getElementById('sort-dir').value;
+
+  let filtered = allCards.filter(c => {
+    if (search  && !c.name.toLowerCase().includes(search) && !(c.description||'').toLowerCase().includes(search)) return false;
+    if (element && c.element !== element) return false;
+    if (type    && c.card_type !== type)  return false;
+    if (rarity  && c.rarity !== rarity)   return false;
+    if (aether  && c.aether_cost > parseInt(aether)) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    let va = a[sortBy], vb = b[sortBy];
+    if (sortBy === 'rarity') { va = RARITY_ORDER.indexOf(va); vb = RARITY_ORDER.indexOf(vb); }
+    if (va === null || va === undefined) va = sortDir==='asc' ? Infinity : -Infinity;
+    if (vb === null || vb === undefined) vb = sortDir==='asc' ? Infinity : -Infinity;
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return sortDir==='asc' ? -1 : 1;
+    if (va > vb) return sortDir==='asc' ? 1 : -1;
+    return 0;
+  });
+
+  renderGrid(filtered);
 }
 
-// Card DB
-async function openCardDB() {
-  openOverlay('carddb-overlay');
-  document.getElementById('add-card-section').style.display = can(CAN_ADD_CARDS) ? '' : 'none';
-  document.getElementById('card-err').textContent = '';
-  await renderCards();
+function resetFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('f-element').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-rarity').value = '';
+  document.getElementById('f-aether').value = '';
+  document.getElementById('sort-by').value = 'name';
+  document.getElementById('sort-dir').value = 'asc';
+  applyFilters();
 }
 
-async function renderCards() {
-  const sub=document.getElementById('carddb-sub'), list=document.getElementById('card-list');
-  list.innerHTML=`<div style="text-align:center;color:#555;padding:16px;font-size:.8rem;">Loading…</div>`;
-  const { data:cards, error } = await sb.from('cards').select('*').order('created_at',{ascending:false});
-  if (error) { sub.textContent='Error loading cards.'; return; }
-  sub.textContent=`${cards.length} card${cards.length!==1?'s':''} in the database`;
-  if (cards.length===0) {
-    list.innerHTML=`<div style="text-align:center;color:#555;padding:16px;font-size:.8rem;">No cards yet.</div>`;
+function rarityClass(r) { return 'rar-' + r.replace(/ /g,'-'); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderGrid(cards) {
+  const grid = document.getElementById('card-grid');
+  const label = document.getElementById('count-label');
+  label.textContent = `${cards.length} card${cards.length!==1?'s':''} found`;
+
+  if (cards.length === 0) {
+    grid.innerHTML = `<div id="empty-state">No cards match your filters.</div>`;
     return;
   }
-  list.innerHTML=cards.map(c=>`
-    <div class="card-row">
-      <div>
-        <div class="card-row-name">${escHtml(c.name)}</div>
-        <div class="card-row-meta">${c.card_type} · ${c.rarity}${c.description?' · '+escHtml(c.description.slice(0,40))+(c.description.length>40?'…':''):''}</div>
+
+  grid.innerHTML = cards.map((c,i) => `
+    <div class="card-tile" onclick="openDetail(${c.id})" style="animation-delay:${i*0.03}s">
+      <div class="card-image ${c.image_url?'':'no-img'}">
+        ${c.image_url
+          ? `<img src="${escHtml(c.image_url)}" alt="${escHtml(c.name)}" onerror="this.parentElement.className='card-image no-img';this.parentElement.innerHTML='No Image';"/>`
+          : 'No Image'}
       </div>
-      ${can(CAN_DELETE_CARDS)?`<button class="icon-btn del" onclick="deleteCard(${c.id})" title="Remove">✕</button>`:''}
+      <div class="card-body">
+        <div class="card-name">${escHtml(c.name)}</div>
+        <div class="card-meta">
+          <span class="card-type-badge">${escHtml(c.card_type)}</span>
+          <span class="card-element el-${c.element}">${c.element}</span>
+        </div>
+        ${(c.atk !== null || c.def !== null) ? `
+        <div class="card-stats">
+          ${c.atk!==null?`ATK <span>${c.atk}</span>`:''}
+          ${c.def!==null?`DEF <span>${c.def}</span>`:''}
+          ${c.aether_cost!==undefined?`✦ <span>${c.aether_cost}</span>`:''}
+        </div>` : ''}
+        <div class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</div>
+      </div>
     </div>`).join('');
 }
 
+// Detail modal
+function openDetail(id) {
+  const c = allCards.find(x => x.id === id);
+  if (!c) return;
+  currentCard = c;
+
+  // image
+  const imgEl = document.getElementById('detail-img');
+  imgEl.innerHTML = c.image_url
+    ? `<img src="${escHtml(c.image_url)}" alt="${escHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='No Image'"/>`
+    : 'No Image';
+
+  document.getElementById('d-name').textContent = c.name;
+
+  // badges
+  const badges = document.getElementById('d-badges');
+  badges.innerHTML = `
+    <span class="card-element el-${c.element}">${c.element}</span>
+    <span class="card-type-badge">${escHtml(c.card_type)}</span>
+    <span class="card-rarity ${rarityClass(c.rarity)}">${c.rarity}</span>
+    ${c.aether_cost!==null?`<span class="card-type-badge">✦ ${c.aether_cost} Aether</span>`:''}
+  `;
+
+  // desc
+  const descS = document.getElementById('d-desc-section');
+  document.getElementById('d-desc').textContent = c.description || '';
+  descS.style.display = c.description ? '' : 'none';
+
+  // ability
+  const abilS = document.getElementById('d-ability-section');
+  document.getElementById('d-ability').textContent = c.special_ability || '';
+  abilS.style.display = c.special_ability ? '' : 'none';
+
+  // grid fields
+  const fields = [
+    ['ATK', c.atk !== null ? c.atk : '—'],
+    ['DEF', c.def !== null ? c.def : '—'],
+    ['Race / Trait', c.race_trait || '—'],
+    ['Artist', c.artist || '—'],
+  ];
+  document.getElementById('d-grid').innerHTML = fields.map(([l,v]) => `
+    <div class="detail-field">
+      <div class="detail-section-label">${l}</div>
+      <div class="detail-value">${escHtml(String(v))}</div>
+    </div>`).join('');
+
+  // delete button
+  document.getElementById('d-del-btn').style.display = can(CAN_DELETE) ? '' : 'none';
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detail-overlay')) closeDetailBtn();
+}
+function closeDetailBtn() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  currentCard = null;
+}
+
+async function deleteCurrentCard() {
+  if (!currentCard) return;
+  const { error } = await sb.from('cards').delete().eq('id', currentCard.id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`"${currentCard.name}" removed.`);
+  closeDetailBtn();
+  allCards = allCards.filter(c => c.id !== currentCard?.id);
+  applyFilters();
+}
+
+// Add card
 async function addCard() {
-  const name=document.getElementById('new-card-name').value.trim();
-  const desc=document.getElementById('new-card-desc').value.trim();
-  const type=document.getElementById('new-card-type').value;
-  const rarity=document.getElementById('new-card-rarity').value;
-  const err=document.getElementById('card-err');
-  err.textContent='';
-  if (!name) { err.textContent='Card name is required.'; return; }
-  const { error } = await sb.from('cards').insert({ name, description:desc||null, card_type:type, rarity, added_by:currentUser?.id });
-  if (error) { err.textContent=error.message; return; }
-  document.getElementById('new-card-name').value='';
-  document.getElementById('new-card-desc').value='';
-  showToast(`"${name}" added!`);
-  await renderCards(); await refreshStats();
+  const name    = document.getElementById('c-name').value.trim();
+  const element = document.getElementById('c-element').value;
+  const type    = document.getElementById('c-type').value;
+  const rarity  = document.getElementById('c-rarity').value;
+  const atk     = document.getElementById('c-atk').value;
+  const def     = document.getElementById('c-def').value;
+  const aether  = document.getElementById('c-aether').value;
+  const race    = document.getElementById('c-race').value.trim();
+  const artist  = document.getElementById('c-artist').value.trim();
+  const desc    = document.getElementById('c-desc').value.trim();
+  const ability = document.getElementById('c-ability').value.trim();
+  const img     = document.getElementById('c-img').value.trim();
+  const err     = document.getElementById('form-err');
+  const ok      = document.getElementById('form-ok');
+  const btn     = document.getElementById('add-btn');
+
+  err.textContent = ''; ok.textContent = '';
+  if (!name) { err.textContent = 'Card name is required.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  const { data, error } = await sb.from('cards').insert({
+    name,
+    element,
+    card_type:    type,
+    rarity,
+    atk:          atk !== '' ? parseInt(atk) : null,
+    def:          def !== '' ? parseInt(def) : null,
+    aether_cost:  aether !== '' ? parseInt(aether) : 0,
+    race_trait:   race  || null,
+    artist:       artist || null,
+    description:  desc   || null,
+    special_ability: ability || null,
+    image_url:    img    || null,
+    added_by:     currentUser?.id,
+  }).select().single();
+
+  btn.disabled = false; btn.textContent = '+ Add Card';
+
+  if (error) { err.textContent = error.message; return; }
+
+  ok.textContent = `"${name}" added!`;
+  allCards.unshift(data);
+  applyFilters();
+  showToast(`"${name}" added to the database!`);
+
+  // clear form
+  ['c-name','c-atk','c-def','c-aether','c-race','c-artist','c-desc','c-ability','c-img'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  setTimeout(() => { ok.textContent = ''; }, 3000);
 }
-
-async function deleteCard(id) {
-  const { error } = await sb.from('cards').delete().eq('id',id);
-  if (error) { showToast('Error: '+error.message); return; }
-  showToast('Card removed.');
-  await renderCards(); await refreshStats();
-}
-
-// Admin
-async function openAdminPanel() {
-  openOverlay('admin-overlay');
-  const list=document.getElementById('user-list');
-  list.innerHTML=`<div style="text-align:center;color:#555;padding:16px;font-size:.8rem;">Loading…</div>`;
-  const { data:users, error } = await sb.from('profiles').select('*').order('created_at');
-  if (error) { list.innerHTML=`<div style="color:var(--red);font-size:.8rem;padding:10px;">${error.message}</div>`; return; }
-  const selectableRoles=['admin','card_editor','moderator','supporter','player'];
-  list.innerHTML=users.map(u=>{
-    const isCreator=u.role==='creator', isMe=u.id===currentUser?.id;
-    const rolesHtml=isCreator
-      ?`<span class="role-badge role-creator">👑 Creator</span>`
-      :`<select id="role-sel-${u.id}">${selectableRoles.map(r=>`<option value="${r}"${r===u.role?' selected':''}>${ROLE_LABELS[r]||r}</option>`).join('')}</select>
-        <button onclick="applyRole('${u.id}')">Apply</button>`;
-    return `<div class="user-row">
-      <div class="user-row-name">${escHtml(u.username)}${isMe?' <span style="color:#555;font-size:.6rem;">(you)</span>':''}</div>
-      ${rolesHtml}
-    </div>`;
-  }).join('');
-}
-
-async function applyRole(userId) {
-  const sel=document.getElementById(`role-sel-${userId}`);
-  const { error } = await sb.from('profiles').update({role:sel.value}).eq('id',userId);
-  if (error) { document.getElementById('admin-err').textContent=error.message; return; }
-  showToast('Role updated.'); await openAdminPanel();
-}
-
-// Announcements
-function openAnnounceModal() { openOverlay('announce-overlay'); }
-
-async function postAnnouncement() {
-  const title=document.getElementById('ann-title-input').value.trim();
-  const body=document.getElementById('ann-body-input').value.trim();
-  const pinned=document.getElementById('ann-pinned').checked;
-  const err=document.getElementById('ann-err'), ok=document.getElementById('ann-ok');
-  err.textContent=''; ok.textContent='';
-  if (!title||!body) { err.textContent='Title and message are required.'; return; }
-  const { error } = await sb.from('announcements').insert({title,body,pinned,posted_by:currentUser?.id});
-  if (error) { err.textContent=error.message; return; }
-  ok.textContent='Announcement posted!';
-  document.getElementById('ann-title-input').value='';
-  document.getElementById('ann-body-input').value='';
-  document.getElementById('ann-pinned').checked=false;
-  showToast('📣 Announcement posted!');
-  loadLatestAnnouncement();
-}
-
-async function loadLatestAnnouncement() {
-  const { data } = await sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle();
-  if (!data) return;
-  document.getElementById('ann-title').textContent=data.title;
-  document.getElementById('ann-body').textContent=data.body;
-  document.getElementById('announcement-banner').classList.add('visible');
-}
-
-function closeAnnouncement() { document.getElementById('announcement-banner').classList.remove('visible'); }
-
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 document.addEventListener('keydown', e => {
-  if (e.key==='Escape') ['auth-overlay','carddb-overlay','admin-overlay','announce-overlay'].forEach(closeOverlay);
+  if (e.key === 'Escape') closeDetailBtn();
 });
-document.getElementById('new-card-name')?.addEventListener('keydown', e => { if(e.key==='Enter') addCard(); });
+document.getElementById('c-name')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addCard();
+});
 
-loadSession();
-refreshStats();
-loadLatestAnnouncement();
+init();
 </script>
 </body>
 </html>
