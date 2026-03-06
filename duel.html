@@ -88,8 +88,8 @@
     .mulligan-btn:hover { background:rgba(255,255,255,.13); }
 
     /* ── GAME SCREEN ── */
-    #game-screen { flex-direction:column; overflow:hidden; }
-    #game-wrap { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; max-width:420px; width:100%; margin:0 auto; border-left:1px solid var(--border2); border-right:1px solid var(--border2); }
+    #game-screen { flex-direction:column; overflow:auto; align-items:center; background:var(--bg); }
+    #game-wrap { display:flex; flex-direction:column; overflow:hidden; width:380px; height:calc(100vh - 44px - 52px - 80px - 44px); flex-shrink:0; border:1px solid var(--border2); margin-top:4px; }
 
     /* OPP HAND — face-down cards across top */
     .opp-hand-row { display:flex; align-items:center; justify-content:center; gap:3px; padding:3px 8px; border-bottom:1px solid var(--border2); flex-shrink:0; background:rgba(0,0,0,.3); height:44px; }
@@ -175,7 +175,7 @@
     .pos-badge { position:absolute; top:2px; left:2px; font-size:.34rem; font-family:'Cinzel',serif; padding:1px 3px; border-radius:1px; background:rgba(0,0,0,.85); color:#fff; letter-spacing:.06em; }
 
     /* MY HAND */
-    #hand-wrap { height:80px; border-top:1px solid var(--border2); display:flex; align-items:flex-end; gap:4px; padding:3px 10px 5px; overflow-x:auto; flex-shrink:0; background:rgba(0,0,0,.25); }
+    #hand-wrap { height:80px; width:380px; border-top:1px solid var(--border2); display:flex; align-items:flex-end; gap:4px; padding:3px 10px 5px; overflow-x:auto; flex-shrink:0; background:rgba(0,0,0,.25); }
     #hand-wrap::-webkit-scrollbar { height:2px; }
     #hand-wrap::-webkit-scrollbar-thumb { background:var(--dim); }
     .h-card { flex-shrink:0; width:54px; border-radius:2px; border:1px solid rgba(255,255,255,.15); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; }
@@ -190,7 +190,7 @@
     .h-card-cost { font-family:'Cinzel',serif; font-size:.38rem; color:var(--blue); }
 
     /* ACTION BAR */
-    #action-bar { height:52px; border-top:1px solid var(--border2); display:flex; align-items:center; gap:6px; padding:0 10px; flex-shrink:0; background:rgba(0,0,0,.4); }
+    #action-bar { height:52px; width:380px; border-top:1px solid var(--border2); display:flex; align-items:center; gap:6px; padding:0 10px; flex-shrink:0; background:rgba(0,0,0,.4); }
     .a-btn { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; padding:7px 13px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; white-space:nowrap; }
     .a-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.06); }
     .a-btn:disabled { opacity:.25; cursor:not-allowed; }
