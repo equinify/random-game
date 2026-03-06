@@ -29,8 +29,8 @@
     .role-supporter { color:#b0bec5; border-color:rgba(176,190,197,.3); background:rgba(176,190,197,.08); }
     .role-player    { color:#888;    border-color:rgba(100,100,100,.3); background:rgba(100,100,100,.08); }
     .back-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
-    #topbar-center { position:absolute; left:50%; transform:translateX(-50%); font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.2em; color:var(--grey); text-transform:uppercase; pointer-events:none; }
-    #phase-pill { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; border:1px solid var(--dim); color:var(--grey); transition:all .3s; display:inline-block; }
+    #topbar-center { flex:1; text-align:center; font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.2em; color:var(--grey); text-transform:uppercase; }
+    #phase-pill { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; border:1px solid var(--dim); color:var(--grey); transition:all .3s; }
 
     /* ── SCREENS ── */
     .screen { position:fixed; inset:44px 0 0 0; display:none; }
@@ -237,10 +237,12 @@
 
 <div id="topbar">
   <a class="back-btn" href="index.html">← Back</a>
-  <div id="topbar-center">Caster Chronicles <span id="phase-pill" style="margin-left:10px;">—</span></div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+  <div id="topbar-center">Caster Chronicles</div>
+  <div id="phase-pill">—</div>
+  <div id="topbar-user" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
     <span id="topbar-username" style="font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.1em;color:var(--white);"></span>
     <span class="role-badge" id="topbar-badge" style="display:none"></span>
+    <button id="topbar-signout-btn" onclick="doSignOut()" style="display:none;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.1em;padding:4px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#666;cursor:pointer;">Sign Out</button>
   </div>
 </div>
 <!-- Auth Modal -->
