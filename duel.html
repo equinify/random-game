@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Duel — Caster Chronicles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#080808; --surface:#111; --surface2:#181818;
+      --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.06);
+      --white:#f0f0f0; --grey:#888; --grey-dim:#444;
+      --red:#e53935; --green:#4caf50; --gold:#f5c518; --blue:#42a5f5;
+      --orb-active:#f5c518; --orb-corrupt:#333;
+      --phase-draw:#4fc3f7; --phase-main:#66bb6a; --phase-battle:#ef5350; --phase-end:#888; --phase-recovery:#ce93d8;
+    }
+    html,body { height:100%; background:var(--bg); color:var(--white); font-family:'Crimson Pro',serif; overflow:hidden; }
+
+    /* TOPBAR */
+    #topbar { height:44px; background:rgba(8,8,8,.95); border-bottom:1px solid var(--border2); backdrop-filter:blur(8px); display:flex; align-items:center; gap:12px; padding:0 18px; flex-shrink:0; position:relative; z-index:50; }
+    .back-btn { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); text-decoration:none; border:1px solid var(--border); border-radius:2px; padding:4px 10px; transition:color .2s,border-color .2s; }
+    .back-btn:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
+    #room-info { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.18em; color:var(--grey); flex:1; text-align:center; }
+    #phase-display { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; padding:3px 12px; border-radius:2px; border:1px solid; transition:all .4s; }
+
+    /* SCREENS */
+    .screen { position:fixed; inset:44px 0 0 0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:30px; }
+    .screen.active { display:flex; }
+
+    /* LOBBY SCREEN */
+    #lobby-screen { background:var(--bg); }
+    .lobby-title { font-family:'Cinzel Decorative',serif; font-size:1.4rem; color:var(--white); text-align:center; }
+    .lobby-sub { font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.2em; color:var(--grey); text-transform:uppercase; text-align:center; }
+    .lobby-btn { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; padding:13px 28px; border-radius:2px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06); color:var(--white); cursor:pointer; transition:all .2s; width:260px; text-align:center; }
+    .lobby-btn:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35); }
+    .lobby-btn.primary { border-color:rgba(245,197,24,.4); background:rgba(245,197,24,.08); color:var(--gold); }
+    .lobby-btn.primary:hover { background:rgba(245,197,24,.15); }
+    .divider-or { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.3em; color:var(--grey-dim); text-transform:uppercase; }
+    .lobby-input { width:260px; background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:11px 14px; color:var(--white); font-family:'Cinzel',serif; font-size:.8rem; letter-spacing:.2em; outline:none; text-align:center; text-transform:uppercase; }
+    .lobby-input:focus { border-color:rgba(255,255,255,.3); }
+    .lobby-err { font-family:'Cinzel',serif; font-size:.6rem; color:var(--red); letter-spacing:.1em; min-height:16px; }
+    .deck-select-label { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.18em; text-transform:uppercase; color:var(--grey); }
+    .deck-select { background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:8px 12px; color:var(--white); font-family:'Cinzel',serif; font-size:.65rem; outline:none; width:260px; cursor:pointer; }
+    .deck-select option { background:#111; }
+
+    /* WAITING SCREEN */
+    #waiting-screen { background:var(--bg); }
+    .room-code-display { font-family:'Cinzel Decorative',serif; font-size:2.5rem; color:var(--gold); letter-spacing:.3em; text-align:center; }
+    .waiting-pulse { animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+    /* GAME SCREEN */
+    #game-screen { padding:0; align-items:stretch; justify-content:stretch; background:var(--bg); }
+    #game-layout { display:grid; grid-template-rows:auto 1fr auto; height:100%; width:100%; }
+
+    /* OPPONENT AREA */
+    #opp-area { border-bottom:1px solid var(--border2); padding:10px 16px; display:flex; flex-direction:column; gap:6px; }
+    .player-bar { display:flex; align-items:center; gap:12px; }
+    .player-name { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.14em; color:var(--white); }
+    .orbs-row { display:flex; gap:5px; align-items:center; }
+    .orb { width:18px; height:18px; border-radius:50%; background:var(--orb-active); border:1px solid rgba(245,197,24,.5); box-shadow:0 0 8px rgba(245,197,24,.3); transition:all .4s; cursor:default; flex-shrink:0; }
+    .orb.corrupt { background:var(--orb-corrupt); border-color:var(--border2); box-shadow:none; }
+    .orb.clickable { cursor:pointer; }
+    .orb.clickable:hover { transform:scale(1.2); box-shadow:0 0 14px rgba(229,57,53,.6); }
+    .aether-display { font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:.12em; color:var(--blue); margin-left:auto; }
+    .deck-count-display { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.1em; color:var(--grey); }
+
+    /* FIELD */
+    #field { display:grid; grid-template-rows:1fr 8px 1fr; flex:1; overflow:hidden; }
+    .field-zone { padding:8px 16px; display:flex; align-items:center; gap:8px; overflow-x:auto; overflow-y:hidden; }
+    .field-zone::-webkit-scrollbar { height:3px; }
+    .field-zone::-webkit-scrollbar-thumb { background:var(--grey-dim); }
+    .field-divider { background:var(--border2); position:relative; display:flex; align-items:center; justify-content:center; }
+    .field-divider::after { content:''; position:absolute; left:50%; transform:translateX(-50%); width:40px; height:1px; background:var(--border); }
+
+    /* FIELD CARDS */
+    .field-card { flex-shrink:0; width:70px; border-radius:3px; border:1px solid var(--border2); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+    .field-card:hover { border-color:rgba(255,255,255,.3); transform:translateY(-3px); }
+    .field-card.rested { transform:rotate(90deg); margin:0 16px; }
+    .field-card.rested:hover { transform:rotate(90deg) translateY(-3px); }
+    .field-card.defense { transform:rotate(180deg); opacity:.85; }
+    .field-card.tapped { opacity:.55; filter:saturate(.4); }
+    .field-card.selected-attacker { border-color:var(--red); box-shadow:0 0 12px rgba(229,57,53,.5); }
+    .field-card.valid-target { border-color:var(--gold); box-shadow:0 0 10px rgba(245,197,24,.4); animation:targetPulse 1s ease-in-out infinite; }
+    @keyframes targetPulse { 0%,100%{box-shadow:0 0 10px rgba(245,197,24,.4)} 50%{box-shadow:0 0 20px rgba(245,197,24,.7)} }
+    .field-card-img { width:100%; aspect-ratio:3/4; object-fit:cover; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:.5rem; color:var(--grey-dim); }
+    .field-card-img img { width:100%; height:100%; object-fit:cover; }
+    .field-card-info { padding:4px 5px; }
+    .field-card-name { font-family:'Cinzel',serif; font-size:.46rem; letter-spacing:.04em; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .field-card-stats { font-family:'Cinzel',serif; font-size:.44rem; color:var(--grey); display:flex; gap:4px; }
+    .field-card-stats span { color:var(--white); }
+
+    /* CASTER ZONE */
+    .caster-zone { display:flex; gap:6px; padding:4px 16px 6px; align-items:center; overflow-x:auto; flex-shrink:0; border-top:1px solid var(--border2); }
+    #my-caster-zone { border-top:1px solid var(--border2); }
+    #opp-caster-zone { border-bottom:1px solid var(--border2); }
+    .caster-card { flex-shrink:0; width:52px; border-radius:2px; border:1px solid var(--border2); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; }
+    .caster-card:hover:not(.tapped) { border-color:rgba(255,255,255,.3); }
+    .caster-card.tapped { opacity:.5; filter:saturate(.3); cursor:default; transform:rotate(15deg); margin:0 8px; }
+    .caster-card-img { width:100%; aspect-ratio:1/1; object-fit:cover; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:.45rem; color:var(--grey-dim); overflow:hidden; }
+    .caster-card-img img { width:100%; height:100%; object-fit:cover; }
+    .caster-aether { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.8); border-radius:1px; font-family:'Cinzel',serif; font-size:.42rem; color:var(--blue); padding:1px 3px; }
+    .coin-token { flex-shrink:0; width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); background:rgba(245,197,24,.1); display:flex; align-items:center; justify-content:center; font-size:.55rem; font-family:'Cinzel',serif; color:var(--gold); cursor:pointer; transition:all .2s; }
+    .coin-token:hover { background:rgba(245,197,24,.2); transform:scale(1.1); }
+    .coin-token.used { opacity:.3; cursor:default; border-color:var(--grey-dim); color:var(--grey-dim); }
+
+    /* MY AREA */
+    #my-area { border-top:1px solid var(--border2); padding:8px 16px; display:flex; flex-direction:column; gap:6px; }
+
+    /* HAND */
+    #hand-area { height:110px; padding:4px 16px 8px; display:flex; align-items:flex-end; gap:6px; overflow-x:auto; flex-shrink:0; border-top:1px solid var(--border2); }
+    #hand-area::-webkit-scrollbar { height:3px; }
+    #hand-area::-webkit-scrollbar-thumb { background:var(--grey-dim); }
+    .hand-card { flex-shrink:0; width:68px; border-radius:3px; border:1px solid var(--border2); background:var(--surface); cursor:pointer; transition:all .2s; position:relative; }
+    .hand-card:hover { border-color:rgba(255,255,255,.3); transform:translateY(-8px); }
+    .hand-card.playable { border-color:rgba(102,187,106,.5); box-shadow:0 0 8px rgba(102,187,106,.3); }
+    .hand-card.playable:hover { border-color:var(--green); transform:translateY(-10px); }
+    .hand-card.selected { border-color:var(--gold); box-shadow:0 0 12px rgba(245,197,24,.4); transform:translateY(-12px); }
+    .hand-card-img { width:100%; aspect-ratio:3/4; object-fit:cover; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:.5rem; color:var(--grey-dim); overflow:hidden; border-radius:3px 3px 0 0; }
+    .hand-card-img img { width:100%; height:100%; object-fit:cover; }
+    .hand-card-bottom { padding:3px 4px; }
+    .hand-card-name { font-family:'Cinzel',serif; font-size:.44rem; letter-spacing:.03em; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hand-card-cost { font-family:'Cinzel',serif; font-size:.42rem; color:var(--blue); }
+
+    /* ACTION BAR */
+    #action-bar { height:44px; border-top:1px solid var(--border2); display:flex; align-items:center; gap:8px; padding:0 16px; flex-shrink:0; background:rgba(8,8,8,.6); }
+    .action-btn { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; padding:6px 14px; border-radius:2px; border:1px solid var(--border); background:transparent; color:var(--grey); cursor:pointer; transition:all .2s; }
+    .action-btn:hover:not(:disabled) { color:var(--white); border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.06); }
+    .action-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .action-btn.phase-btn { border-color:rgba(102,187,106,.3); color:var(--green); }
+    .action-btn.phase-btn:hover { background:rgba(102,187,106,.1); border-color:var(--green); }
+    .action-btn.danger { border-color:rgba(229,57,53,.3); color:var(--red); }
+    .action-btn.danger:hover { background:rgba(229,57,53,.1); }
+    #action-msg { font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:.12em; color:var(--grey); flex:1; text-align:center; }
+
+    /* MODAL */
+    .modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.88); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal-box { background:#111; border:1px solid var(--border); border-radius:3px; padding:28px 32px; width:360px; max-height:80vh; overflow-y:auto; position:relative; }
+    .modal-title { font-family:'Cinzel Decorative',serif; font-size:.95rem; color:var(--white); margin-bottom:14px; }
+    .modal-close { position:absolute; top:12px; right:14px; background:none; border:none; cursor:pointer; color:var(--grey-dim); font-size:1rem; }
+    .modal-close:hover { color:var(--white); }
+    .modal-btn { width:100%; margin-top:8px; padding:10px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.2); border-radius:2px; color:var(--white); font-family:'Cinzel',serif; font-size:.64rem; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; transition:background .2s; }
+    .modal-btn:hover { background:rgba(255,255,255,.13); }
+
+    /* CARD DETAIL IN MODAL */
+    .modal-card-detail { display:flex; gap:14px; margin-bottom:14px; }
+    .modal-card-img { width:90px; flex-shrink:0; border-radius:2px; overflow:hidden; background:var(--surface2); aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; color:var(--grey-dim); font-size:.6rem; }
+    .modal-card-img img { width:100%; height:100%; object-fit:cover; }
+    .modal-card-info { flex:1; display:flex; flex-direction:column; gap:6px; }
+    .modal-card-name { font-family:'Cinzel Decorative',serif; font-size:.85rem; color:var(--white); }
+    .modal-card-stat { font-family:'Cinzel',serif; font-size:.58rem; color:var(--grey); }
+    .modal-card-stat span { color:var(--white); }
+    .modal-card-desc { font-size:.8rem; color:var(--grey); line-height:1.5; }
+
+    /* TOAST */
+    #toast { position:fixed; bottom:60px; left:50%; transform:translateX(-50%) translateY(12px); background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:8px 20px; font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.14em; color:var(--white); z-index:300; opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* WIN/LOSE */
+    #result-overlay { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,.92); display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+    #result-overlay.show { display:flex; }
+    #result-title { font-family:'Cinzel Decorative',serif; font-size:3rem; }
+    #result-title.win { color:var(--gold); }
+    #result-title.lose { color:var(--red); }
+    #result-sub { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.2em; color:var(--grey); text-transform:uppercase; }
+
+    /* BACK OF CARD */
+    .card-back { background:linear-gradient(135deg,#1a1a2e,#16213e); border:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; }
+    .card-back-inner { width:60%; height:60%; border:1px solid rgba(255,255,255,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:.5rem; color:rgba(255,255,255,.2); letter-spacing:.1em; }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-btn" href="index.html">← Back</a>
+  <div id="room-info">Caster Chronicles — Duel</div>
+  <div id="phase-display" style="border-color:var(--border);color:var(--grey);">—</div>
+</div>
+
+<!-- LOBBY -->
+<div class="screen active" id="lobby-screen">
+  <div class="lobby-title">Enter the Arena</div>
+  <div class="lobby-sub">Choose your deck, then create or join a duel</div>
+  <div class="deck-select-label">Select Your Deck</div>
+  <select class="deck-select" id="lobby-deck-select">
+    <option value="">Loading decks…</option>
+  </select>
+  <button class="lobby-btn primary" onclick="createRoom()">⚔ Create Duel Room</button>
+  <div class="divider-or">— or —</div>
+  <input class="lobby-input" id="join-code-input" type="text" placeholder="ENTER CODE" maxlength="6"/>
+  <button class="lobby-btn" onclick="joinRoom()">Join Room</button>
+  <div class="lobby-err" id="lobby-err"></div>
+</div>
+
+<!-- WAITING -->
+<div class="screen" id="waiting-screen">
+  <div class="lobby-sub">Room Code</div>
+  <div class="room-code-display" id="waiting-code">——</div>
+  <div class="lobby-sub waiting-pulse">Waiting for opponent…</div>
+  <button class="lobby-btn" onclick="copyCode()">Copy Code</button>
+  <button class="lobby-btn" style="color:var(--red);border-color:rgba(229,57,53,.3);" onclick="cancelRoom()">Cancel</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game-screen">
+  <div id="game-layout">
+
+    <!-- Opponent -->
+    <div id="opp-area">
+      <div class="player-bar">
+        <span class="player-name" id="opp-name">Opponent</span>
+        <div class="orbs-row" id="opp-orbs"></div>
+        <span class="aether-display" id="opp-aether">✦ 0</span>
+        <span class="deck-count-display" id="opp-deck-count">Deck: 0</span>
+      </div>
+      <div class="caster-zone" id="opp-caster-zone"></div>
+    </div>
+
+    <!-- Field -->
+    <div id="field">
+      <div class="field-zone" id="opp-field"></div>
+      <div class="field-divider"></div>
+      <div class="field-zone" id="my-field"></div>
+    </div>
+
+    <!-- My Casters -->
+    <div id="my-area">
+      <div class="caster-zone" id="my-caster-zone"></div>
+      <div class="player-bar">
+        <span class="player-name" id="my-name">You</span>
+        <div class="orbs-row" id="my-orbs"></div>
+        <span class="aether-display" id="my-aether">✦ 0</span>
+        <span class="deck-count-display" id="my-deck-count">Deck: 0</span>
+      </div>
+    </div>
+
+    <!-- Hand -->
+    <div id="hand-area"></div>
+
+    <!-- Action Bar -->
+    <div id="action-bar">
+      <button class="action-btn" onclick="showCardDetail(selectedHandCard)" id="inspect-btn" disabled>Inspect</button>
+      <button class="action-btn" onclick="playSelectedCard()" id="play-btn" disabled>Play Card</button>
+      <button class="action-btn" onclick="declareAttack()" id="attack-btn" disabled>Attack</button>
+      <button class="action-btn" onclick="toggleDefense()" id="defense-btn" disabled>Set Defense</button>
+      <div id="action-msg">Waiting…</div>
+      <button class="action-btn phase-btn" onclick="nextPhase()" id="next-phase-btn" disabled>Next Phase →</button>
+      <button class="action-btn danger" onclick="concede()" id="concede-btn">Concede</button>
+    </div>
+  </div>
+</div>
+
+<!-- Card Detail Modal -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('card-modal')">✕</button>
+    <div class="modal-title" id="card-modal-title">Card Detail</div>
+    <div class="modal-card-detail">
+      <div class="modal-card-img" id="card-modal-img">?</div>
+      <div class="modal-card-info" id="card-modal-info"></div>
+    </div>
+    <div class="modal-card-desc" id="card-modal-desc"></div>
+    <div id="card-modal-ability" style="margin-top:8px;font-size:.8rem;color:var(--blue);line-height:1.5;"></div>
+  </div>
+</div>
+
+<!-- Position Modal (when playing a servant) -->
+<div class="modal-overlay" id="position-modal">
+  <div class="modal-box" style="width:300px;text-align:center;">
+    <div class="modal-title">Choose Position</div>
+    <p style="font-size:.82rem;color:var(--grey);margin-bottom:16px;">How do you want to play this servant?</p>
+    <button class="modal-btn" onclick="confirmPlayCard('attack')">⚔ Attack Position</button>
+    <button class="modal-btn" onclick="confirmPlayCard('defense')" style="margin-top:6px;">🛡 Defense Position</button>
+    <button class="modal-btn" onclick="closeModal('position-modal')" style="margin-top:6px;color:var(--grey);border-color:var(--border);">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="result-overlay">
+  <div id="result-title">Victory!</div>
+  <div id="result-sub">The duel has ended</div>
+  <button class="lobby-btn" onclick="window.location.href='index.html'" style="margin-top:10px;">Return Home</button>
+</div>
+
+<script>
+const SUPABASE_URL  = 'https://bcqgrxzhjawxqwceflpk.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_dhuEDL-DJP4_mD4PUVIevg_1u_gjA-j';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const HAND_SIZE = 7;
+const ORBS = 7;
+const PHASES = ['recovery','draw','main','battle','end'];
+const PHASE_COLORS = { recovery:'var(--phase-recovery)', draw:'var(--phase-draw)', main:'var(--phase-main)', battle:'var(--phase-battle)', end:'var(--phase-end)' };
+
+let currentUser = null, currentProfile = null;
+let myDecks = [], allCards = [];
+let duelId = null, duelCode = null, duelSub = null;
+let mySlot = null; // 'player1' or 'player2'
+let gs = null; // game state object
+let selectedHandCard = null; // { card, index }
+let selectedAttacker = null; // field card index
+let attackMode = false;
+
+// ── Helpers ──────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, dur=2800) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),dur);
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function oppSlot() { return mySlot==='player1'?'player2':'player1'; }
+function isMyTurn() { return gs && gs.currentTurn === mySlot; }
+function currentPhase() { return gs?.phase || 'recovery'; }
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session?.user) { window.location.href='index.html'; return; }
+  currentUser = session.user;
+  const { data:p } = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  currentProfile = p;
+  await Promise.all([loadDecks(), loadAllCards()]);
+}
+
+async function loadDecks() {
+  const { data } = await sb.from('decks').select('*').eq('owner_id',currentUser.id).order('created_at');
+  myDecks = data || [];
+  const sel = document.getElementById('lobby-deck-select');
+  if (myDecks.length === 0) { sel.innerHTML='<option value="">No decks — build one first!</option>'; return; }
+  sel.innerHTML = myDecks.map(d=>`<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+  // auto-select active deck
+  const active = myDecks.find(d=>d.is_active);
+  if (active) sel.value = active.id;
+}
+
+async function loadAllCards() {
+  const { data } = await sb.from('cards').select('*');
+  allCards = data || [];
+}
+
+function getCard(id) { return allCards.find(c=>c.id==id) || null; }
+
+// ── Deck Loading ──────────────────────────────────────────────
+async function loadDeckCardIds(deckId) {
+  const { data } = await sb.from('deck_cards').select('card_id,quantity').eq('deck_id',deckId);
+  const ids = [];
+  for (const row of data||[]) {
+    for (let i=0; i<row.quantity; i++) ids.push(row.card_id);
+  }
+  return shuffle(ids);
+}
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+// ── Room Management ───────────────────────────────────────────
+function generateCode() {
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+async function createRoom() {
+  const deckId = document.getElementById('lobby-deck-select').value;
+  const err = document.getElementById('lobby-err');
+  err.textContent = '';
+  if (!deckId) { err.textContent='Please select a deck first.'; return; }
+
+  const deck = myDecks.find(d=>d.id==deckId);
+  // check deck has 50 cards
+  const { count } = await sb.from('deck_cards').select('quantity',{count:'exact'}).eq('deck_id',deckId);
+  
+  const code = generateCode();
+  const deckIds = await loadDeckCardIds(deckId);
+  
+  const initState = buildInitialState('player1', deckIds, []);
+  
+  const { data, error } = await sb.from('duels').insert({
+    code,
+    player1_id: currentUser.id,
+    player1_deck: deckId,
+    status: 'waiting',
+    game_state: initState
+  }).select().single();
+
+  if (error) { err.textContent=error.message; return; }
+  
+  duelId = data.id;
+  duelCode = code;
+  mySlot = 'player1';
+  
+  document.getElementById('waiting-code').textContent = code;
+  showScreen('waiting-screen');
+  subscribeToRoom(duelId);
+}
+
+async function joinRoom() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  const deckId = document.getElementById('lobby-deck-select').value;
+  const err = document.getElementById('lobby-err');
+  err.textContent='';
+  if (!code||code.length!==6) { err.textContent='Enter a valid 6-character room code.'; return; }
+  if (!deckId) { err.textContent='Please select a deck first.'; return; }
+
+  const { data:room, error } = await sb.from('duels').select('*').eq('code',code).single();
+  if (error||!room) { err.textContent='Room not found. Check the code and try again.'; return; }
+  if (room.status!=='waiting') { err.textContent='This room is no longer available.'; return; }
+  if (room.player1_id===currentUser.id) { err.textContent="You can't join your own room!"; return; }
+
+  const deckIds = await loadDeckCardIds(deckId);
+  const existingState = room.game_state;
+  const fullState = mergePlayer2(existingState, deckIds);
+
+  const { error:e2 } = await sb.from('duels').update({
+    player2_id: currentUser.id,
+    player2_deck: deckId,
+    status: 'active',
+    game_state: fullState
+  }).eq('id',room.id);
+
+  if (e2) { err.textContent=e2.message; return; }
+
+  duelId = room.id;
+  duelCode = code;
+  mySlot = 'player2';
+  gs = fullState;
+  
+  showScreen('game-screen');
+  subscribeToRoom(duelId);
+  startGame();
+}
+
+async function cancelRoom() {
+  if (duelId) await sb.from('duels').delete().eq('id',duelId);
+  if (duelSub) sb.removeChannel(duelSub);
+  duelId=null; duelCode=null;
+  showScreen('lobby-screen');
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(duelCode).then(()=>showToast('Code copied!'));
+}
+
+// ── Realtime ─────────────────────────────────────────────────
+function subscribeToRoom(id) {
+  duelSub = sb.channel(`duel-${id}`)
+    .on('postgres_changes',{ event:'UPDATE', schema:'public', table:'duels', filter:`id=eq.${id}` }, payload => {
+      const row = payload.new;
+      if (row.status==='active' && !document.getElementById('game-screen').classList.contains('active')) {
+        gs = row.game_state;
+        showScreen('game-screen');
+        startGame();
+      } else if (row.status==='active') {
+        gs = row.game_state;
+        renderGame();
+      } else if (row.status==='finished') {
+        gs = row.game_state;
+        showResult(row.winner_id);
+      }
+    })
+    .subscribe();
+}
+
+// ── Game State ────────────────────────────────────────────────
+function buildInitialState(slot, deckIds, emptyDeck) {
+  return {
+    currentTurn: 'player1',
+    phase: 'recovery',
+    turnNumber: 1,
+    player1: buildPlayerState(deckIds),
+    player2: buildPlayerState(emptyDeck),
+  };
+}
+
+function mergePlayer2(state, deckIds) {
+  state.player2 = buildPlayerState(deckIds);
+  return state;
+}
+
+function buildPlayerState(deckIds) {
+  const deck = [...deckIds];
+  const hand = deck.splice(0, HAND_SIZE);
+  return {
+    deck,
+    hand,
+    field: [],       // { cardId, position:'attack'|'defense', rested:false }
+    casters: [],     // { cardId, tapped:false }
+    hasCoin: true,
+    aether: 0,
+    orbs: Array(ORBS).fill(true), // true=active, false=corrupt
+    graveyard: [],
+  };
+}
+
+function myState()  { return gs[mySlot]; }
+function oppState() { return gs[oppSlot()]; }
+
+// ── Save State ────────────────────────────────────────────────
+async function saveState(extraFields={}) {
+  const { error } = await sb.from('duels').update({ game_state: gs, ...extraFields }).eq('id',duelId);
+  if (error) showToast('Sync error: '+error.message);
+}
+
+// ── Game Start ────────────────────────────────────────────────
+function startGame() {
+  renderGame();
+  updatePhaseDisplay();
+  if (mySlot==='player1') {
+    setActionMsg('Game started! It\'s your turn — Recovery Phase.');
+    enableControls(true);
+  } else {
+    setActionMsg('Game started! Waiting for opponent…');
+    enableControls(false);
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderGame() {
+  if (!gs) return;
+  const me = myState(), opp = oppState();
+  renderOrbs('my-orbs', me.orbs, false);
+  renderOrbs('opp-orbs', opp.orbs, false);
+  document.getElementById('my-aether').textContent  = `✦ ${me.aether}`;
+  document.getElementById('opp-aether').textContent = `✦ ${opp.aether}`;
+  document.getElementById('my-deck-count').textContent  = `Deck: ${me.deck.length}`;
+  document.getElementById('opp-deck-count').textContent = `Deck: ${opp.deck.length}`;
+  if (currentProfile) document.getElementById('my-name').textContent = currentProfile.username;
+  renderHand(me.hand);
+  renderField('my-field', me.field, true);
+  renderField('opp-field', opp.field, false);
+  renderCasters('my-caster-zone', me.casters, me.hasCoin, true);
+  renderCasters('opp-caster-zone', opp.casters, opp.hasCoin, false);
+  updatePhaseDisplay();
+  updateActionButtons();
+}
+
+function renderOrbs(elId, orbs, clickable) {
+  const el = document.getElementById(elId);
+  el.innerHTML = orbs.map((active,i) =>
+    `<div class="orb${active?'':' corrupt'}${clickable?' clickable':''}" 
+     ${clickable?`onclick="corruptOrb(${i})"`:''} title="Orb ${i+1}"></div>`
+  ).join('');
+}
+
+function renderHand(hand) {
+  const el = document.getElementById('hand-area');
+  const me = myState();
+  el.innerHTML = hand.map((cardId,i) => {
+    const card = getCard(cardId);
+    if (!card) return '';
+    const affordable = canAfford(card, me);
+    const playable = isMyTurn() && currentPhase()==='main' && affordable;
+    const selected = selectedHandCard && selectedHandCard.index===i;
+    return `<div class="hand-card${playable?' playable':''}${selected?' selected':''}" onclick="selectHandCard(${i})" title="${escHtml(card.name)}">
+      <div class="hand-card-img">
+        ${card.image_url?`<img src="${escHtml(card.image_url)}" onerror="this.parentElement.textContent='?'"/>`:'?'}
+      </div>
+      <div class="hand-card-bottom">
+        <div class="hand-card-name">${escHtml(card.name)}</div>
+        <div class="hand-card-cost">✦${card.aether_cost||0} · ${card.element}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderField(elId, field, isMine) {
+  const el = document.getElementById(elId);
+  el.innerHTML = field.map((slot,i) => {
+    const card = getCard(slot.cardId);
+    if (!card) return '';
+    const isAttacker = isMine && selectedAttacker===i;
+    const isTarget = !isMine && attackMode;
+    return `<div class="field-card${slot.position==='defense'?' defense':''}${slot.rested?' rested':''}${isAttacker?' selected-attacker':''}${isTarget?' valid-target':''}" 
+      onclick="${isMine?`selectFieldCard(${i})`:`targetFieldCard(${i})`}" title="${escHtml(card.name)}">
+      <div class="field-card-img">
+        ${card.image_url?`<img src="${escHtml(card.image_url)}" onerror="this.parentElement.textContent='?'"/>`:'?'}
+      </div>
+      <div class="field-card-info">
+        <div class="field-card-name">${escHtml(card.name)}</div>
+        <div class="field-card-stats">ATK<span>${card.atk||0}</span> DEF<span>${card.def||0}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCasters(elId, casters, hasCoin, isMine) {
+  const el = document.getElementById(elId);
+  let html = casters.map((slot,i) => {
+    const card = getCard(slot.cardId);
+    if (!card) return '';
+    return `<div class="caster-card${slot.tapped?' tapped':''}" 
+      onclick="${isMine&&!slot.tapped&&isMyTurn()&&currentPhase()==='main'?`tapCaster(${i})`:'void(0)'}" 
+      title="${escHtml(card.name)}${slot.tapped?' (Tapped)':''}">
+      <div class="caster-card-img">
+        ${card.image_url?`<img src="${escHtml(card.image_url)}" onerror="this.parentElement.textContent='✦'"/>`:'✦'}
+      </div>
+      <div class="caster-aether">✦</div>
+    </div>`;
+  }).join('');
+  if (isMine && hasCoin) {
+    html += `<div class="coin-token" onclick="useCoin()" title="Coin Token — tap for 1 aether (any element), removed after use">¢</div>`;
+  }
+  el.innerHTML = html;
+}
+
+function updatePhaseDisplay() {
+  const phase = currentPhase();
+  const el = document.getElementById('phase-display');
+  el.textContent = phase.toUpperCase();
+  el.style.borderColor = PHASE_COLORS[phase];
+  el.style.color = PHASE_COLORS[phase];
+}
+
+function setActionMsg(msg) { document.getElementById('action-msg').textContent = msg; }
+
+function updateActionButtons() {
+  const myTurn = isMyTurn();
+  const phase = currentPhase();
+  document.getElementById('next-phase-btn').disabled = !myTurn;
+  document.getElementById('play-btn').disabled = !(myTurn && phase==='main' && selectedHandCard);
+  document.getElementById('attack-btn').disabled = !(myTurn && phase==='battle');
+  document.getElementById('defense-btn').disabled = !(myTurn && phase==='main' && selectedHandCard);
+  document.getElementById('inspect-btn').disabled = !selectedHandCard;
+  if (!myTurn) setActionMsg("Opponent's turn…");
+}
+
+function enableControls(on) {
+  document.getElementById('next-phase-btn').disabled = !on;
+}
+
+// ── Card Selection ────────────────────────────────────────────
+function selectHandCard(index) {
+  const me = myState();
+  if (selectedHandCard && selectedHandCard.index===index) {
+    selectedHandCard = null;
+    selectedAttacker = null;
+    attackMode = false;
+  } else {
+    selectedHandCard = { cardId: me.hand[index], index };
+    selectedAttacker = null;
+    attackMode = false;
+  }
+  renderGame();
+}
+
+function selectFieldCard(index) {
+  if (!isMyTurn() || currentPhase()!=='battle') return;
+  const me = myState();
+  const slot = me.field[index];
+  if (!slot || slot.rested || slot.position==='defense') { showToast("This servant can't attack!"); return; }
+  selectedAttacker = index;
+  attackMode = true;
+  selectedHandCard = null;
+  setActionMsg('Choose a target — opponent\'s servant or orb!');
+  renderGame();
+}
+
+function targetFieldCard(index) {
+  if (!attackMode || selectedAttacker===null) return;
+  const opp = oppState();
+  // Must attack defense servants first
+  const hasDefender = opp.field.some(s=>s.position==='defense');
+  const targetSlot = opp.field[index];
+  if (hasDefender && targetSlot.position!=='defense') {
+    showToast('You must attack the defense servant first!'); return;
+  }
+  resolveAttack('servant', index);
+}
+
+function corruptOrb(orbIndex) {
+  if (!attackMode || selectedAttacker===null) { showToast('Select an attacker first!'); return; }
+  const opp = oppState();
+  const hasDefender = opp.field.some(s=>s.position==='defense');
+  if (hasDefender) { showToast('You must destroy the defense servant first!'); return; }
+  resolveAttack('orb', orbIndex);
+}
+
+// ── Game Actions ──────────────────────────────────────────────
+function canAfford(card, me) {
+  if (!['servant','deity','conjure','barrier'].includes(card.card_type)) {
+    // casters are played for free (they go to caster zone)
+    return card.card_type === 'caster';
+  }
+  // need at least one aether of the card's element
+  // simplified: check total aether >= cost and has element match
+  return me.aether >= (card.aether_cost||0);
+}
+
+function playSelectedCard() {
+  if (!selectedHandCard || !isMyTurn() || currentPhase()!=='main') return;
+  const card = getCard(selectedHandCard.cardId);
+  if (!card) return;
+  if (card.card_type==='caster') { playCaster(); return; }
+  if (card.card_type==='servant') { openModal('position-modal'); return; }
+  // conjure/barrier/deity — play directly
+  confirmPlayCard('attack');
+}
+
+function playCaster() {
+  const me = myState();
+  const card = getCard(selectedHandCard.cardId);
+  me.hand.splice(selectedHandCard.index, 1);
+  me.casters.push({ cardId: card.id, tapped: false });
+  selectedHandCard = null;
+  showToast(`${card.name} placed in Caster Zone!`);
+  saveState();
+  renderGame();
+}
+
+function confirmPlayCard(position) {
+  closeModal('position-modal');
+  if (!selectedHandCard) return;
+  const me = myState();
+  const card = getCard(selectedHandCard.cardId);
+  if (!canAfford(card, me)) { showToast("Not enough aether!"); return; }
+  me.aether -= (card.aether_cost||0);
+  me.hand.splice(selectedHandCard.index, 1);
+  me.field.push({ cardId: card.id, position, rested: false });
+  selectedHandCard = null;
+  showToast(`${card.name} played in ${position} position!`);
+  saveState();
+  renderGame();
+}
+
+function tapCaster(index) {
+  if (!isMyTurn() || currentPhase()!=='main') return;
+  const me = myState();
+  const slot = me.casters[index];
+  if (slot.tapped) { showToast('Already tapped!'); return; }
+  slot.tapped = true;
+  me.aether += 1;
+  showToast('+1 Aether!');
+  saveState();
+  renderGame();
+}
+
+function useCoin() {
+  if (!isMyTurn() || currentPhase()!=='main') return;
+  const me = myState();
+  if (!me.hasCoin) return;
+  me.hasCoin = false;
+  me.aether += 1;
+  showToast('Coin used! +1 Aether (any element) — coin removed from game.');
+  saveState();
+  renderGame();
+}
+
+function toggleDefense() {
+  if (!selectedHandCard || !isMyTurn() || currentPhase()!=='main') return;
+  const card = getCard(selectedHandCard.cardId);
+  if (card.card_type!=='servant') { showToast('Only servants can be set in defense!'); return; }
+  const me = myState();
+  if (!canAfford(card, me)) { showToast("Not enough aether!"); return; }
+  me.aether -= (card.aether_cost||0);
+  me.hand.splice(selectedHandCard.index, 1);
+  me.field.push({ cardId: card.id, position: 'defense', rested: false });
+  selectedHandCard = null;
+  showToast(`${card.name} set in Defense Position!`);
+  saveState();
+  renderGame();
+}
+
+function declareAttack() {
+  if (!isMyTurn() || currentPhase()!=='battle') return;
+  const me = myState();
+  const attackers = me.field.filter(s=>!s.rested && s.position==='attack');
+  if (attackers.length===0) { showToast('No servants available to attack!'); return; }
+  setActionMsg('Click a servant on your field to select your attacker, then choose a target or orb!');
+  // enable orb clicking on opponent side
+  renderOrbsClickable();
+}
+
+function renderOrbsClickable() {
+  const opp = oppState();
+  const el = document.getElementById('opp-orbs');
+  el.innerHTML = opp.orbs.map((active,i) =>
+    `<div class="orb${active?'':' corrupt'} clickable" onclick="corruptOrb(${i})" title="Attack Orb ${i+1}"></div>`
+  ).join('');
+}
+
+function resolveAttack(targetType, targetIndex) {
+  const me = myState(), opp = oppState();
+  const attacker = me.field[selectedAttacker];
+  const attackerCard = getCard(attacker.cardId);
+
+  if (targetType==='orb') {
+    opp.orbs[targetIndex] = false;
+    attacker.rested = true;
+    showToast(`Orb ${targetIndex+1} corrupted!`);
+    checkWinCondition();
+  } else {
+    const defender = opp.field[targetIndex];
+    const defenderCard = getCard(defender.cardId);
+    const atkPow = attackerCard.atk||0;
+    const defPow = defender.position==='defense'?(defenderCard.def||0):(defenderCard.atk||0);
+
+    if (atkPow > defPow) {
+      opp.graveyard.push(defender.cardId);
+      opp.field.splice(targetIndex, 1);
+      showToast(`${attackerCard.name} destroyed ${defenderCard.name}!`);
+    } else if (defPow > atkPow) {
+      me.graveyard.push(attacker.cardId);
+      me.field.splice(selectedAttacker, 1);
+      showToast(`${defenderCard.name} destroyed ${attackerCard.name}!`);
+    } else {
+      opp.graveyard.push(defender.cardId);
+      me.graveyard.push(attacker.cardId);
+      opp.field.splice(targetIndex, 1);
+      me.field.splice(selectedAttacker, 1);
+      showToast('Both servants destroyed! (Tie)');
+    }
+  }
+
+  selectedAttacker = null;
+  attackMode = false;
+  saveState();
+  renderGame();
+}
+
+// ── Phases ────────────────────────────────────────────────────
+async function nextPhase() {
+  if (!isMyTurn()) return;
+  const phaseIndex = PHASES.indexOf(currentPhase());
+  
+  if (phaseIndex < PHASES.length-1) {
+    gs.phase = PHASES[phaseIndex+1];
+    if (gs.phase==='draw') doDrawPhase();
+    else if (gs.phase==='battle') {
+      setActionMsg('Battle Phase — click your servants to attack!');
+    } else if (gs.phase==='end') doEndPhase();
+    updatePhaseDisplay();
+    await saveState();
+    renderGame();
+  } else {
+    // end turn
+    await endTurn();
+  }
+}
+
+function doDrawPhase() {
+  const me = myState();
+  if (me.deck.length===0) {
+    showToast('No cards left in deck! You lose!');
+    endGame(oppSlot());
+    return;
+  }
+  const drawn = me.deck.shift();
+  me.hand.push(drawn);
+  const card = getCard(drawn);
+  showToast(`Drew: ${card?.name||'a card'}`);
+}
+
+function doEndPhase() {
+  setActionMsg('End Phase — passing turn…');
+}
+
+async function endTurn() {
+  const opp = oppSlot();
+  // recovery: untap all casters, reset aether
+  const oppS = oppState();
+  oppS.casters.forEach(c=>c.tapped=false);
+  // rest servants reset is handled at start of their turn
+  gs.currentTurn = opp;
+  gs.phase = 'recovery';
+  gs.turnNumber = (gs.turnNumber||1) + 0.5;
+
+  // recovery for new active player
+  const newMe = gs[opp];
+  newMe.field.forEach(s=>s.rested=false);
+
+  setActionMsg("Opponent's turn…");
+  await saveState();
+  renderGame();
+}
+
+// ── Win Condition ─────────────────────────────────────────────
+function checkWinCondition() {
+  const opp = oppState();
+  const activeOrbs = opp.orbs.filter(Boolean).length;
+  if (activeOrbs===0) {
+    setActionMsg('All orbs corrupted! Attack once more to win!');
+    showToast('All orbs gone — one more attack wins!', 4000);
+  }
+  // check if all orbs gone AND this is an extra attack
+  if (activeOrbs===0 && opp.extraOrbAttack) {
+    endGame(mySlot);
+  } else if (activeOrbs===0) {
+    opp.extraOrbAttack = true;
+  }
+}
+
+async function endGame(winnerSlot) {
+  const winnerId = gs[winnerSlot+'_id'] || (winnerSlot===mySlot?currentUser.id:null);
+  await saveState({ status:'finished', winner_id: winnerId || currentUser.id });
+  showResult(winnerId);
+}
+
+function showResult(winnerId) {
+  const el = document.getElementById('result-overlay');
+  const title = document.getElementById('result-title');
+  const sub = document.getElementById('result-sub');
+  const isWinner = winnerId===currentUser.id;
+  title.textContent = isWinner ? 'Victory!' : 'Defeat';
+  title.className = isWinner ? 'win' : 'lose';
+  sub.textContent = isWinner ? 'The opponent has been vanquished.' : 'Better luck next time, Caster.';
+  el.classList.add('show');
+  // record battle
+  if (winnerId) sb.from('battles').insert({ winner_id: winnerId, ended_at: new Date().toISOString() }).then(()=>{});
+}
+
+async function concede() {
+  if (!confirm('Concede the duel?')) return;
+  await endGame(oppSlot());
+}
+
+// ── Card Detail ───────────────────────────────────────────────
+function showCardDetail(sel) {
+  if (!sel) return;
+  const card = getCard(sel.cardId);
+  if (!card) return;
+  document.getElementById('card-modal-title').textContent = card.name;
+  const img = document.getElementById('card-modal-img');
+  img.innerHTML = card.image_url?`<img src="${escHtml(card.image_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='?'"/>`:'?';
+  document.getElementById('card-modal-info').innerHTML = `
+    <div class="modal-card-name">${escHtml(card.name)}</div>
+    <div class="modal-card-stat">Type: <span>${card.card_type}</span></div>
+    <div class="modal-card-stat">Element: <span>${card.element}</span></div>
+    <div class="modal-card-stat">Rarity: <span>${card.rarity}</span></div>
+    <div class="modal-card-stat">ATK <span>${card.atk??'—'}</span> / DEF <span>${card.def??'—'}</span></div>
+    <div class="modal-card-stat">Aether Cost: <span>✦${card.aether_cost||0}</span></div>
+    ${card.race_trait?`<div class="modal-card-stat">Race/Trait: <span>${escHtml(card.race_trait)}</span></div>`:''}
+  `;
+  document.getElementById('card-modal-desc').textContent = card.description||'';
+  document.getElementById('card-modal-ability').textContent = card.special_ability?`⚡ ${card.special_ability}`:'';
+  openModal('card-modal');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { closeModal('card-modal'); closeModal('position-modal'); }
+});
+
+init();
+</script>
+</body>
+</html>
