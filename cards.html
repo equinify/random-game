@@ -378,6 +378,7 @@
   <div id="main">
     <div id="card-count-bar">
       <span id="count-label">Loading…</span>
+      <button onclick="loadCards()" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 10px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--grey);cursor:pointer;transition:color .2s;margin-left:10px;">↻ Refresh</button>
       <div id="sort-row">
         <span style="font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-dim);">Sort</span>
         <select class="sort-select" id="sort-by" onchange="applyFilters()">
@@ -562,13 +563,32 @@ sb.auth.onAuthStateChange(async(event,session)=>{
 });
 
 async function toggleAddForm(){
+  // Force refresh profile if not set
   if(!currentProfile&&currentUser){
-    const{data}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
-    currentProfile=data;window.currentProfile=data;updateAuthUI();
+    try {
+      const{data}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+      if(data){
+        currentProfile=data;
+        window.currentProfile=data;
+        updateAuthUI();
+      }
+    } catch(e){
+      console.error('[toggleAddForm] Failed to load profile:',e);
+      alert('Could not load your profile. Please refresh and try again.');
+      return;
+    }
   }
-  if(!can(CAN_ADD)){alert(`Your role (${myRole()||'unknown'}) does not have permission to add cards.`);return;}
+  
+  const userRole = myRole();
+  console.log('[toggleAddForm] User role:', userRole, 'Can add roles:', CAN_ADD);
+  
+  if(!can(CAN_ADD)){
+    alert(`Your role (${userRole||'unknown'}) does not have permission to add cards.\n\nRequired roles: ${CAN_ADD.join(', ')}`);
+    return;
+  }
   document.getElementById('add-card-modal').classList.add('open');
 }
+
 function closeAddModal(){document.getElementById('add-card-modal').classList.remove('open');}
 document.getElementById('add-card-modal').addEventListener('click',e=>{
   if(e.target===document.getElementById('add-card-modal'))closeAddModal();
