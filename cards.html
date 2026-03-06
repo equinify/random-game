@@ -21,21 +21,25 @@
     .topbar-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3)}
     #add-btn{border-color:rgba(245,197,24,.3);color:#f5c518}
     #add-btn:hover{background:rgba(245,197,24,.1)}
-    #username{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;color:var(--white);white-space:nowrap;display:none}
-    .role-badge{font-size:.55rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:2px 7px;border-radius:2px;font-weight:700;text-transform:uppercase;border:1px solid;display:none}
+    .topbar-info{display:flex;align-items:center;gap:8px;font-family:'Cinzel',serif;font-size:.55rem;display:none}
+    #username{color:var(--white);white-space:nowrap}
+    .role-badge{font-size:.55rem;letter-spacing:.08em;padding:2px 7px;border-radius:2px;font-weight:700;text-transform:uppercase;border:1px solid}
     .role-creator{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08)}
+    .role-card_editor{color:#90caf9;border-color:rgba(144,202,249,.3);background:rgba(144,202,249,.08)}
     
     #page{display:flex;min-height:calc(100vh - 49px)}
     #sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--border);padding:20px 18px;display:flex;flex-direction:column;gap:20px;position:sticky;top:49px;height:calc(100vh - 49px);overflow-y:auto}
     .sidebar-section-title{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--grey-dim);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
     #search{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:8px 12px;color:var(--white);font-family:'Crimson Pro',serif;font-size:.9rem;outline:none;transition:border-color .2s}
     #search:focus{border-color:rgba(255,255,255,.3)}
-    .filter-group{display:flex;flex-direction:column;gap:6px}
+    .filter-group{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}
     .filter-label{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--grey);margin-bottom:2px}
     .filter-select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:7px 10px;color:var(--white);font-family:'Crimson Pro',serif;font-size:.88rem;outline:none;transition:border-color .2s;cursor:pointer}
     .filter-select:focus{border-color:rgba(255,255,255,.3)}
     .filter-select option{background:#111}
-    .reset-btn{width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--grey);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:10px}
+    .filter-multi{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:7px 10px;color:var(--white);font-family:'Crimson Pro',serif;font-size:.88rem;outline:none;height:80px}
+    .filter-multi option{background:#111;padding:2px}
+    .reset-btn{width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--grey);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .2s}
     .reset-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3)}
     
     #main{flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
@@ -65,15 +69,25 @@
     .field label{display:block;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);margin-bottom:5px}
     .field input,.field select,.field textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:.88rem;outline:none;transition:border-color .2s}
     .field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(255,255,255,.3)}
-    .field select option{background:#111}
+    .field select option,.field textarea option{background:#111}
     .field textarea{resize:vertical;min-height:60px}
     .row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
     .submit-btn{width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:var(--white);font-family:'Cinzel',serif;font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:8px}
     .submit-btn:hover{background:rgba(255,255,255,.14)}
     .submit-btn:disabled{opacity:.35;cursor:not-allowed}
     .msg{font-size:.7rem;text-align:center;min-height:14px;margin-top:8px;font-family:'Cinzel',serif}
     .msg.err{color:var(--red)}
     .msg.ok{color:var(--green)}
+    
+    .detail-img{width:100%;aspect-ratio:3/4;background:#000;margin-bottom:16px;border-radius:2px;overflow:hidden}
+    .detail-img img{width:100%;height:100%;object-fit:cover}
+    .detail-section{margin-bottom:12px}
+    .detail-section-label{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--grey-dim);margin-bottom:3px}
+    .detail-text{font-size:.9rem;color:var(--white);line-height:1.4}
+    .detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .detail-stat{display:flex;justify-content:space-between;font-family:'Cinzel',serif;font-size:.75rem}
+    .detail-stat-val{color:var(--white)}
   </style>
 </head>
 <body>
@@ -82,12 +96,14 @@
   <a class="back-btn" href="index.html">← Back</a>
   <div class="topbar-title">Card Database</div>
   <div id="topbar-right">
-    <button class="topbar-btn" id="add-btn" onclick="openModal()">✏️ Add Card</button>
+    <button class="topbar-btn" id="add-btn" onclick="openAddModal()">✏️ Add Card</button>
     <div class="topbar-divider" id="div1" style="display:none"></div>
-    <span id="username"></span>
-    <span class="role-badge" id="role-badge"></span>
-    <div class="topbar-divider" id="div2" style="display:none"></div>
-    <button class="topbar-btn" id="signout-btn" onclick="signOut()">Sign Out</button>
+    <div class="topbar-info" id="topbar-info">
+      <span id="username"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <div class="topbar-divider"></div>
+      <button class="topbar-btn" id="signout-btn" onclick="signOut()" style="display:none;padding:5px 12px;margin:0">Sign Out</button>
+    </div>
   </div>
 </div>
 
@@ -99,23 +115,73 @@
     </div>
     <div>
       <div class="sidebar-section-title">Filters</div>
+      
       <div class="filter-group">
         <div class="filter-label">Element</div>
         <select class="filter-select" id="f-element" onchange="applyFilters()">
           <option value="">All Elements</option>
-          <option value="solis">Solis</option><option value="ignus">Ignus</option><option value="silva">Silva</option>
+          <option value="solis">Solis</option><option value="ignus">Ignus</option><option value="silva">Silva</option><option value="terra">Terra</option><option value="luna">Luna</option><option value="aqua">Aqua</option><option value="aes">Aes</option><option value="void">Void</option>
         </select>
+      </div>
+      
+      <div class="filter-group">
         <div class="filter-label">Type</div>
         <select class="filter-select" id="f-type" onchange="applyFilters()">
           <option value="">All Types</option>
-          <option value="caster">Caster</option><option value="barrier">Barrier</option>
+          <option value="caster">Caster</option><option value="barrier">Barrier</option><option value="conjure">Conjure</option><option value="deity">Deity</option><option value="servant">Servant</option>
         </select>
+      </div>
+
+      <div class="filter-group">
         <div class="filter-label">Rarity</div>
         <select class="filter-select" id="f-rarity" onchange="applyFilters()">
           <option value="">All Rarities</option>
-          <option value="common">Common</option><option value="uncommon">Uncommon</option>
+          <option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare">Rare</option><option value="super rare">Super Rare</option><option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option><option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option><option value="promo">Promo</option>
         </select>
       </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Set / Version</div>
+        <select class="filter-select" id="f-set" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="modern">Modern</option><option value="legacy">Legacy</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Aether Cost</div>
+        <select class="filter-multi" id="f-aether" multiple onchange="applyFilters()">
+          <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Race / Trait</div>
+        <select class="filter-multi" id="f-race" multiple onchange="applyFilters()">
+          <option value="angel">Angel</option><option value="charm">Charm</option><option value="cosmetics">Cosmetics</option><option value="cryptid">Cryptid</option><option value="cthulhu">Cthulhu</option><option value="demon">Demon</option><option value="dragon">Dragon</option><option value="evil">Evil</option><option value="greed">Greed</option><option value="heroic spirit">Heroic Spirit</option><option value="holy">Holy</option><option value="hunger">Hunger</option><option value="insect">Insect</option><option value="jewelry">Jewelry</option><option value="justice">Justice</option><option value="madness">Madness</option><option value="monk">Monk</option><option value="plant">Plant</option><option value="pride">Pride</option><option value="rage">Rage</option><option value="research">Research</option><option value="sloth">Sloth</option><option value="solar">Solar</option><option value="supplies">Supplies</option><option value="sweets">Sweets</option><option value="youkai">Youkai</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">ATK</div>
+        <div class="row-3">
+          <select class="filter-select" id="f-atk-op" onchange="applyFilters()" style="padding:5px">
+            <option value="">&lt;</option><option value="=">=</option><option value=">">&gt;</option>
+          </select>
+          <input type="number" id="f-atk-val" placeholder="0" onchange="applyFilters()" style="background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:5px;color:var(--white)"/>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">DEF</div>
+        <div class="row-3">
+          <select class="filter-select" id="f-def-op" onchange="applyFilters()" style="padding:5px">
+            <option value="">&lt;</option><option value="=">=</option><option value=">">&gt;</option>
+          </select>
+          <input type="number" id="f-def-val" placeholder="0" onchange="applyFilters()" style="background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:5px;color:var(--white)"/>
+        </div>
+      </div>
+      
       <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
     </div>
   </div>
@@ -135,20 +201,56 @@
   </div>
 </div>
 
+<!-- Detail Modal -->
+<div class="modal" id="detail-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    <div class="detail-img" id="detail-img"></div>
+    <div class="modal-title" id="detail-name"></div>
+    
+    <div class="detail-section">
+      <div class="detail-section-label">Type</div>
+      <div class="detail-text" id="detail-type"></div>
+    </div>
+
+    <div class="detail-stats">
+      <div class="detail-stat"><span>ATK</span><span class="detail-stat-val" id="detail-atk"></span></div>
+      <div class="detail-stat"><span>DEF</span><span class="detail-stat-val" id="detail-def"></span></div>
+      <div class="detail-stat"><span>Aether</span><span class="detail-stat-val" id="detail-aether"></span></div>
+      <div class="detail-stat"><span>Rarity</span><span class="detail-stat-val" id="detail-rarity"></span></div>
+    </div>
+
+    <div class="detail-section" id="detail-desc-section">
+      <div class="detail-section-label">Description</div>
+      <div class="detail-text" id="detail-desc"></div>
+    </div>
+
+    <div class="detail-section" id="detail-race-section">
+      <div class="detail-section-label">Race / Trait</div>
+      <div class="detail-text" id="detail-race"></div>
+    </div>
+
+    <button class="submit-btn" id="edit-btn" style="display:none" onclick="openEditModal()">Edit Card</button>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
 <div class="modal" id="card-modal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal()">✕</button>
+    <button class="modal-close" onclick="closeAddModal()">✕</button>
     <div class="modal-title" id="modal-title">Add Card</div>
     
     <div class="field"><label>Name *</label><input id="c-name" type="text"/></div>
-    <div class="field"><label>Element</label><select id="c-element"><option value="solis">Solis</option><option value="ignus">Ignus</option><option value="silva">Silva</option></select></div>
-    <div class="field"><label>Type</label><select id="c-type"><option value="caster">Caster</option><option value="barrier">Barrier</option></select></div>
-    <div class="field"><label>Rarity</label><select id="c-rarity"><option value="common">Common</option><option value="uncommon">Uncommon</option></select></div>
+    <div class="field"><label>Element</label><select id="c-element"><option value="solis">Solis</option><option value="ignus">Ignus</option><option value="silva">Silva</option><option value="terra">Terra</option><option value="luna">Luna</option><option value="aqua">Aqua</option><option value="aes">Aes</option><option value="void">Void</option></select></div>
+    <div class="field"><label>Type</label><select id="c-type"><option value="caster">Caster</option><option value="barrier">Barrier</option><option value="conjure">Conjure</option><option value="deity">Deity</option><option value="servant">Servant</option></select></div>
+    <div class="field"><label>Rarity</label><select id="c-rarity"><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare">Rare</option><option value="super rare">Super Rare</option><option value="ultra rare">Ultra Rare</option><option value="secret rare">Secret Rare</option><option value="hyper rare">Hyper Rare</option><option value="repack">Repack</option><option value="promo">Promo</option></select></div>
+    <div class="field"><label>Set</label><select id="c-set"><option value="modern">Modern</option><option value="legacy">Legacy</option></select></div>
     <div class="row-2">
       <div class="field"><label>ATK</label><input id="c-atk" type="number" value="0"/></div>
       <div class="field"><label>DEF</label><input id="c-def" type="number" value="0"/></div>
     </div>
     <div class="field"><label>Aether Cost</label><input id="c-aether" type="number" value="0"/></div>
+    <div class="field"><label>Race / Trait</label><input id="c-race" type="text"/></div>
     <div class="field"><label>Image URL</label><input id="c-img" type="text"/></div>
     <div class="field"><label>Description</label><textarea id="c-desc"></textarea></div>
     
@@ -165,7 +267,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 const RARITY_ORDER = ['common','uncommon','rare','super rare','ultra rare','secret rare','hyper rare','repack','promo'];
 
 const CARDS = [
-  {id:1, name:"Orange Peko Lv1", element:"solis", "card type":"caster", rarity:"common", atk:100, def:50, "aether cost":2, "image url":"https://cdn.buylist.ca/Single_Card_Images/watermarked/casterchronicles/the-magic-battle-begins/Orange_Peko_Lv1__The_Magic_Battle_Begins_147241_3514528.webp", description:"A fox spirit of modest power."}
+  {id:1, name:"Orange Peko Lv1", element:"solis", "card type":"caster", rarity:"common", atk:100, def:50, "aether cost":2, "race_trait":"Fox Spirit", "image url":"https://cdn.buylist.ca/Single_Card_Images/watermarked/casterchronicles/the-magic-battle-begins/Orange_Peko_Lv1__The_Magic_Battle_Begins_147241_3514528.webp", description:"A fox spirit of modest power.", "card set":"modern"}
 ];
 
 let allCards = [];
@@ -173,6 +275,7 @@ let user = null;
 let profile = null;
 let sortDir = 'asc';
 let editingIdx = null;
+let viewingIdx = null;
 
 async function init() {
   const {data:{session}} = await sb.auth.getSession();
@@ -195,26 +298,24 @@ function updateUI() {
   const un = document.getElementById('username');
   const rb = document.getElementById('role-badge');
   const ab = document.getElementById('add-btn');
-  const d1 = document.getElementById('div1');
-  const d2 = document.getElementById('div2');
-  const sb = document.getElementById('signout-btn');
+  const ei = document.getElementById('edit-btn');
+  const info = document.getElementById('topbar-info');
+  const signout = document.getElementById('signout-btn');
   
   if(profile) {
     un.textContent = profile.username;
-    un.style.display = '';
     rb.textContent = profile.role === 'creator' ? '👑 Creator' : '✏️ Editor';
-    rb.className = 'role-badge role-creator';
-    rb.style.display = '';
-    d1.style.display = '';
-    d2.style.display = '';
+    rb.className = `role-badge role-${profile.role}`;
+    info.style.display = 'flex';
     ab.style.display = '';
-    sb.style.display = '';
+    signout.style.display = '';
+    if(['creator','admin','card_editor'].includes(profile.role)) {
+      ei.style.display = '';
+    }
   } else if(user) {
     un.textContent = user.email;
-    un.style.display = '';
-    d1.style.display = '';
-    d2.style.display = '';
-    sb.style.display = '';
+    info.style.display = 'flex';
+    signout.style.display = '';
   }
 }
 
@@ -228,13 +329,29 @@ function applyFilters() {
   const elem = document.getElementById('f-element').value;
   const typ = document.getElementById('f-type').value;
   const rar = document.getElementById('f-rarity').value;
+  const set = document.getElementById('f-set').value;
+  const aether = Array.from(document.getElementById('f-aether').selectedOptions).map(o => o.value);
+  const races = Array.from(document.getElementById('f-race').selectedOptions).map(o => o.value);
+  const atkOp = document.getElementById('f-atk-op').value;
+  const atkVal = parseInt(document.getElementById('f-atk-val').value) || 0;
+  const defOp = document.getElementById('f-def-op').value;
+  const defVal = parseInt(document.getElementById('f-def-val').value) || 0;
   const sortBy = document.getElementById('sort-by').value;
   
   let cards = allCards.filter(c => {
-    if(search && !c.name.toLowerCase().includes(search)) return false;
+    if(search && !c.name.toLowerCase().includes(search) && !(c.description||'').toLowerCase().includes(search)) return false;
     if(elem && c.element !== elem) return false;
     if(typ && c['card type'] !== typ) return false;
     if(rar && c.rarity !== rar) return false;
+    if(set && c['card set'] !== set) return false;
+    if(aether.length && !aether.includes(String(c['aether cost']))) return false;
+    if(races.length && !races.includes(c.race_trait)) return false;
+    if(atkOp === '<' && c.atk >= atkVal) return false;
+    if(atkOp === '=' && c.atk !== atkVal) return false;
+    if(atkOp === '>' && c.atk <= atkVal) return false;
+    if(defOp === '<' && c.def >= defVal) return false;
+    if(defOp === '=' && c.def !== defVal) return false;
+    if(defOp === '>' && c.def <= defVal) return false;
     return true;
   });
   
@@ -256,6 +373,13 @@ function resetFilters() {
   document.getElementById('f-element').value = '';
   document.getElementById('f-type').value = '';
   document.getElementById('f-rarity').value = '';
+  document.getElementById('f-set').value = '';
+  document.getElementById('f-aether').selectedIndex = -1;
+  document.getElementById('f-race').selectedIndex = -1;
+  document.getElementById('f-atk-op').value = '';
+  document.getElementById('f-atk-val').value = '';
+  document.getElementById('f-def-op').value = '';
+  document.getElementById('f-def-val').value = '';
   applyFilters();
 }
 
@@ -279,8 +403,8 @@ function render(cards) {
   }
   
   empty.style.display = 'none';
-  grid.innerHTML = cards.map((c,i) => `
-    <div class="card" onclick="editCard(${allCards.indexOf(c)})">
+  grid.innerHTML = cards.map(c => `
+    <div class="card" onclick="openDetailModal(${allCards.indexOf(c)})">
       <div class="card-img"><img src="${c['image url']}" alt="${c.name}"/></div>
       <div class="card-body">
         <div class="card-name">${c.name}</div>
@@ -291,33 +415,59 @@ function render(cards) {
   `).join('');
 }
 
-function openModal() {
+function openDetailModal(idx) {
+  viewingIdx = idx;
+  const c = allCards[idx];
+  document.getElementById('detail-img').innerHTML = `<img src="${c['image url']}" alt="${c.name}"/>`;
+  document.getElementById('detail-name').textContent = c.name;
+  document.getElementById('detail-type').textContent = `${c.element} • ${c['card type']}`;
+  document.getElementById('detail-atk').textContent = c.atk;
+  document.getElementById('detail-def').textContent = c.def;
+  document.getElementById('detail-aether').textContent = c['aether cost'];
+  document.getElementById('detail-rarity').textContent = c.rarity;
+  document.getElementById('detail-desc').textContent = c.description || '—';
+  document.getElementById('detail-desc-section').style.display = c.description ? '' : 'none';
+  document.getElementById('detail-race').textContent = c.race_trait || '—';
+  document.getElementById('detail-race-section').style.display = c.race_trait ? '' : 'none';
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+function openAddModal() {
   editingIdx = null;
   document.getElementById('modal-title').textContent = 'Add Card';
   document.getElementById('c-name').value = '';
   document.getElementById('c-desc').value = '';
+  document.getElementById('c-race').value = '';
   document.getElementById('msg').textContent = '';
   document.getElementById('card-modal').classList.add('open');
 }
 
-function editCard(idx) {
-  editingIdx = idx;
-  const c = allCards[idx];
+function openEditModal() {
+  if(viewingIdx === null) return;
+  closeDetailModal();
+  editingIdx = viewingIdx;
+  const c = allCards[editingIdx];
   document.getElementById('modal-title').textContent = 'Edit Card';
   document.getElementById('c-name').value = c.name;
   document.getElementById('c-element').value = c.element;
   document.getElementById('c-type').value = c['card type'];
   document.getElementById('c-rarity').value = c.rarity;
+  document.getElementById('c-set').value = c['card set'];
   document.getElementById('c-atk').value = c.atk;
   document.getElementById('c-def').value = c.def;
   document.getElementById('c-aether').value = c['aether cost'];
+  document.getElementById('c-race').value = c.race_trait;
   document.getElementById('c-img').value = c['image url'];
   document.getElementById('c-desc').value = c.description;
   document.getElementById('msg').textContent = '';
   document.getElementById('card-modal').classList.add('open');
 }
 
-function closeModal() {
+function closeAddModal() {
   document.getElementById('card-modal').classList.remove('open');
 }
 
@@ -338,9 +488,11 @@ function saveCard() {
     element: document.getElementById('c-element').value,
     'card type': document.getElementById('c-type').value,
     rarity: document.getElementById('c-rarity').value,
+    'card set': document.getElementById('c-set').value,
     atk: parseInt(document.getElementById('c-atk').value) || 0,
     def: parseInt(document.getElementById('c-def').value) || 0,
     'aether cost': parseInt(document.getElementById('c-aether').value) || 0,
+    race_trait: document.getElementById('c-race').value,
     'image url': document.getElementById('c-img').value,
     description: document.getElementById('c-desc').value
   };
@@ -361,7 +513,7 @@ function saveCard() {
     btn.disabled = false;
     
     setTimeout(() => {
-      closeModal();
+      closeAddModal();
       applyFilters();
     }, 1000);
   }, 300);
