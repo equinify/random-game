@@ -23,14 +23,15 @@
     .topbar-title{font-family:'Cinzel Decorative',serif;font-size:.9rem;color:var(--white);position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;}
     #topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
     .topbar-divider{width:1px;height:16px;background:var(--border);}
-    #toggle-add-btn{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(245,197,24,.3);background:rgba(245,197,24,.06);color:#f5c518;cursor:pointer;display:inline-block;transition:background .2s;}
+    .topbar-btn{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--grey);cursor:pointer;transition:color .2s,border-color .2s;display:none;}
+    .topbar-btn:hover{color:var(--white);border-color:rgba(255,255,255,.3);}
+    .topbar-btn.show{display:inline-block;}
+    #toggle-add-btn{border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.06);color:#f5c518;}
     #toggle-add-btn:hover{background:rgba(245,197,24,.14);}
     #topbar-username{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;color:var(--white);white-space:nowrap;}
     .role-badge{font-size:.55rem;font-family:'Cinzel',serif;letter-spacing:.08em;padding:2px 7px;border-radius:2px;font-weight:700;text-transform:uppercase;border:1px solid;}
     .role-creator{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08);}
     .role-card_editor{color:#90caf9;border-color:rgba(144,202,249,.3);background:rgba(144,202,249,.08);}
-    #topbar-signout-btn{font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#666;cursor:pointer;display:inline-block;transition:color .2s,border-color .2s;}
-    #topbar-signout-btn:hover{color:var(--white);border-color:rgba(255,255,255,.25);}
     #page{display:flex;min-height:calc(100vh - 49px);}
     #sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--border2);padding:20px 18px;display:flex;flex-direction:column;gap:20px;position:sticky;top:49px;height:calc(100vh - 49px);overflow-y:auto;}
     .sidebar-section-title{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--grey-dim);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border2);}
@@ -60,8 +61,8 @@
     .card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;}
     .card-type-badge{font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);border:1px solid var(--border2);padding:1px 5px;border-radius:1px;}
     .card-element{font-family:'Cinzel',serif;font-size:.48rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:1px;border:1px solid;font-weight:700;}
-    .el-solis{color:var(--solis);border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08);}
-    .el-ignus{color:var(--ignus);border-color:rgba(255,87,34,.3);background:rgba(255,87,34,.08);}
+    .el-solis{color:#f5c518;border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.08);}
+    .el-ignus{color:#ff5722;border-color:rgba(255,87,34,.3);background:rgba(255,87,34,.08);}
     .el-silva{color:#66bb6a;border-color:rgba(102,187,106,.3);background:rgba(102,187,106,.08);}
     .el-terra{color:#a1887f;border-color:rgba(161,136,127,.3);background:rgba(161,136,127,.08);}
     .el-luna{color:#ce93d8;border-color:rgba(206,147,216,.3);background:rgba(206,147,216,.08);}
@@ -89,7 +90,7 @@
     .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
     .detail-field{display:flex;flex-direction:column;gap:2px;}
     .detail-value{font-family:'Cinzel',serif;font-size:.68rem;color:var(--white);}
-    .detail-btn{margin-top:auto;padding:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:var(--white);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:background .2s;width:100%;}
+    .detail-btn{margin-top:auto;padding:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:var(--white);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s;width:100%;}
     .detail-btn:hover{background:rgba(255,255,255,.14);}
     #add-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;}
     #add-modal.open{display:flex;}
@@ -118,13 +119,13 @@
   <a class="back-btn" href="index.html">← Back</a>
   <div class="topbar-title">Card Database</div>
   <div id="topbar-right">
-    <button id="refresh-btn" onclick="loadCards()" style="font-family:'Cinzel',serif;font-size:.54rem;letter-spacing:.1em;padding:5px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--grey);cursor:pointer;transition:color .2s;">🔄 Refresh</button>
-    <button id="toggle-add-btn" onclick="openAddModal()" style="display:none;"></button>
-    <div class="topbar-divider" id="div-username" style="display:none;"></div>
+    <button class="topbar-btn" id="refresh-btn" onclick="loadCards()">🔄 Refresh</button>
+    <button class="topbar-btn show" id="toggle-add-btn" onclick="openAddModal()">✏️ Add Card</button>
+    <div class="topbar-divider" id="div-username"></div>
     <span id="topbar-username"></span>
     <span class="role-badge" id="topbar-badge" style="display:none;"></span>
-    <div class="topbar-divider" id="div-action" style="display:none;"></div>
-    <button id="topbar-signout-btn" onclick="signOut()" style="display:none;">Sign Out</button>
+    <div class="topbar-divider" id="div-action"></div>
+    <button class="topbar-btn" id="topbar-signout-btn" onclick="signOut()">Sign Out</button>
   </div>
 </div>
 
@@ -195,7 +196,7 @@
       <div id="d-desc-section"><div class="detail-section-label">Description</div><div class="detail-text" id="d-desc"></div></div>
       <div id="d-ability-section"><div class="detail-section-label">Special Ability</div><div class="detail-text" id="d-ability"></div></div>
       <div class="detail-grid" id="d-grid"></div>
-      <button class="detail-btn" id="d-edit-btn" onclick="openEditModal()">Edit Card</button>
+      <button class="detail-btn" id="d-edit-btn" style="display:none" onclick="openEditModal()">Edit Card</button>
     </div>
   </div>
 </div>
@@ -258,39 +259,34 @@ function updateAuthUI(){
     badge.style.display = '';
     divUser.style.display = '';
     divAction.style.display = '';
-    toggleBtn.style.display = can(CAN_ADD) ? 'inline-block' : 'none';
-    toggleBtn.textContent = '✏️ Add Card';
-    signoutBtn.style.display = '';
+    toggleBtn.classList.toggle('show', can(CAN_ADD));
+    signoutBtn.classList.add('show');
   } else if(currentUser){
     uname.textContent = currentUser.email;
     badge.style.display = 'none';
     divUser.style.display = '';
     divAction.style.display = '';
-    toggleBtn.style.display = 'none';
-    signoutBtn.style.display = '';
+    toggleBtn.classList.remove('show');
+    signoutBtn.classList.add('show');
   } else {
     uname.textContent = '';
     badge.style.display = 'none';
     divUser.style.display = 'none';
     divAction.style.display = 'none';
-    toggleBtn.style.display = 'none';
-    signoutBtn.style.display = 'none';
+    toggleBtn.classList.remove('show');
+    signoutBtn.classList.remove('show');
   }
 }
 
 async function init(){
-  console.log('[init] Starting initialization...');
   try{
     const{data:{session}} = await sb.auth.getSession();
-    console.log('[init] Session:', session?.user?.email || 'No user');
     if(session?.user){
       currentUser = session.user;
       const{data} = await sb.from('profiles').select('*').eq('id', session.user.id).single();
       currentProfile = data;
-      console.log('[init] Profile loaded:', currentProfile?.username);
     }
   }catch(e){console.error('[init auth]', e);}
-  console.log('[init] Calling updateAuthUI with currentProfile:', currentProfile);
   updateAuthUI();
   await loadCards();
 }
@@ -319,14 +315,11 @@ async function signOut(){
   updateAuthUI();
 }
 
-
 async function loadCards(){
   try {
-    console.log('[loadCards] Fetching from Supabase...');
     const { data, error } = await sb.from('cards').select('*');
     if (error) throw new Error(error.message);
     allCards = data || [];
-    console.log('[loadCards] Loaded', allCards.length, 'cards');
     applyFilters();
   } catch(e) {
     console.error('[loadCards] Error:', e.message);
@@ -419,6 +412,10 @@ function openDetail(idx){
     ['Race / Trait',c.race_trait||'—'],['Artist',c.artist||'—'],
   ].map(([l,v])=>`<div class="detail-field"><div class="detail-section-label">${l}</div><div class="detail-value">${escHtml(String(v))}</div></div>`).join('');
   
+  if(can(CAN_ADD)) {
+    document.getElementById('d-edit-btn').style.display = '';
+  }
+  
   document.getElementById('detail-overlay').classList.add('open');
 }
 
@@ -505,7 +502,7 @@ function saveCard(){
       allCards[editingIdx] = card;
     }
     
-    msg.textContent = editingIdx === null ? '✓ Card added! Push to GitHub to save.' : '✓ Card updated! Push to GitHub to save.';
+    msg.textContent = editingIdx === null ? '✓ Card added!' : '✓ Card updated!';
     msg.className = 'form-msg form-ok';
     btn.disabled = false;
     
