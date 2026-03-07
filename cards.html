@@ -75,6 +75,15 @@
       color:var(--grey); cursor:pointer; transition:color .2s,border-color .2s;
     }
     #btn-signin:hover { color:var(--white); border-color:rgba(255,255,255,.3); }
+    #btn-refresh {
+      font-family:'Cinzel',serif; font-size:.54rem; letter-spacing:.1em;
+      padding:5px 10px; border-radius:2px;
+      border:1px solid rgba(255,255,255,.1); background:transparent;
+      color:#666; cursor:pointer; transition:color .2s,border-color .2s,transform .3s;
+    }
+    #btn-refresh:hover { color:var(--white); border-color:rgba(255,255,255,.25); }
+    #btn-refresh.spinning { animation:spin .6s linear; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
     #btn-signout {
       display:none;
       font-family:'Cinzel',serif; font-size:.54rem; letter-spacing:.1em;
@@ -370,6 +379,8 @@
     <span id="topbar-badge" class="role-badge" style="display:none;"></span>
     <!-- divider -->
     <div class="tb-divider" id="tb-div-2" style="display:none;"></div>
+    <!-- refresh -->
+    <button id="btn-refresh" onclick="doRefresh()" title="Reload cards">↺</button>
     <!-- sign in (logged out) -->
     <button id="btn-signin" onclick="openAuthModal()">Sign In</button>
     <!-- sign out (logged in) -->
@@ -684,23 +695,29 @@ async function loadProfile(userId) {
 }
 
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    currentUser    = session.user;
-    currentProfile = await loadProfile(session.user.id);
-  }
-  refreshAuthUI();
-  await loadCards();
+  // onAuthStateChange fires INITIAL_SESSION before this runs — let it handle auth.
+  // We just ensure cards load even if no session exists.
+  setTimeout(async () => { if (allCards.length === 0) await loadCards(); }, 500);
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  console.log('[auth]', event, session?.user?.email || 'none');
   if (event === 'SIGNED_OUT') {
     currentUser = null; currentProfile = null;
-    refreshAuthUI(); return;
+    if (editModeOn) toggleEditMode();
+    refreshAuthUI();
+    applyFilters();
+    return;
   }
-  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+  // Handles INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED
+  if (session?.user) {
     currentUser    = session.user;
     currentProfile = await loadProfile(session.user.id);
+    refreshAuthUI();
+    if (allCards.length === 0) await loadCards();
+    else applyFilters();
+  } else {
+    currentUser = null; currentProfile = null;
     refreshAuthUI();
     if (allCards.length === 0) await loadCards();
   }
@@ -1063,6 +1080,14 @@ async function submitAuth() {
   }
   if (result.error) { errEl.textContent = result.error.message; return; }
   closeAuthModal();
+  // Reload so session is picked up cleanly by onAuthStateChange INITIAL_SESSION
+  location.reload();
+}
+async function doRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('spinning');
+  await loadCards();
+  setTimeout(() => btn.classList.remove('spinning'), 650);
 }
 async function doSignOut() {
   await sb.auth.signOut();
